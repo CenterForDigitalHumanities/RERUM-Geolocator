@@ -35,6 +35,9 @@ GEOCODER.init =  async function(){
     let geoAssertions = await fetch(GEOCODER.URLS.QUERY, {
         method: "POST",
         mode: "cors",
+        headers: {
+            'Content-Type': 'application/json;charset=utf-8'
+        },
         body: JSON.stringify(geoAssertionsQuery)
     })
     .then(response => response.json())
@@ -261,6 +264,9 @@ GEOCODER.submitAnno = async function(event, app){
         let createdObj = await fetch(GEOCODER.URLS.CREATE, {
             method: "POST",
             mode: "cors",
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
             body: JSON.stringify(demoAnno)
         })
         .then(response => response.json())

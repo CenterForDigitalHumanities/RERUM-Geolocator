@@ -100,7 +100,7 @@ and open the template in the editor.
             </div>
 
             <!-- Get the Lat and Long, allow them to use Leaflet to provide, use Leaflet to preview and confirm -->      
-            <div id="coordinatesCard" style="visibility:hidden;" class="card notfirst">
+            <div id="coordinatesCard" class="card notfirst is-hidden">
                 <header title="Use the map below to pan around.  Click to be given the option to use coordinates, 
                 or enter coordinates manually.">
                     Use the map to select coordinates.  You may also supply coordinates manually.
@@ -242,7 +242,7 @@ and open the template in the editor.
         function confirmTarget(event){
             supplyURI.classList.add("is-hidden")
             confirmURI.classList.add("is-hidden")
-            coordinatesCard.style.visibility = "visible"
+            coordinatesCard.classList.remove("is-hidden")
         }
         
         /**

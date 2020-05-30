@@ -39,6 +39,8 @@ public class TinyQuery extends HttpServlet {
      */
         protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, Exception {
+            System.out.println("Query RERUM");
+                
         TinyTokenManager manager = new TinyTokenManager();
         BufferedReader bodyReader = request.getReader();
         StringBuilder bodyString = new StringBuilder();
@@ -74,6 +76,7 @@ public class TinyQuery extends HttpServlet {
                 pubTok = manager.generateNewAccessToken();
             }
             //Point to rerum server v1
+            System.out.println("GBP");
             URL postUrl = new URL(Constant.RERUM_API_ADDR + "/getByProperties.action");
             HttpURLConnection connection = (HttpURLConnection) postUrl.openConnection();
             connection.setDoOutput(true);
@@ -100,17 +103,21 @@ public class TinyQuery extends HttpServlet {
                     sb.append(line);
                 }
                 reader.close();
+                System.out.println("Response from RERUM");
+                System.out.println(sb.toString());
                 for (Map.Entry<String, List<String>> entries : connection.getHeaderFields().entrySet()) {
                     String values = "";
                     String removeBraks = entries.getValue().toString();
                     values = removeBraks.substring(1, removeBraks.length() -1);
-                    if(null != entries.getKey() && !entries.getKey().equals("Transfer-Encoding")){
+                    //FIXME: WHY DID I HAVE TO IGNORE CONTENT-LENGTH!
+                    if(null != entries.getKey() && !entries.getKey().equals("Transfer-Encoding") && !entries.getKey().equals("Content-Length")){
                         response.setHeader(entries.getKey(), values);
                     }
                 }
             }
             catch(IOException ex){
                 //Need to get the response RERUM sent back.
+                System.out.println("PROBLEM");
                 BufferedReader error = new BufferedReader(new InputStreamReader(connection.getErrorStream(),"utf-8"));
                 String errorLine = "";
                 while ((errorLine = error.readLine()) != null){  
@@ -125,6 +132,7 @@ public class TinyQuery extends HttpServlet {
             response.setStatus(codeOverwrite);
             response.setHeader("Content-Type", "application/json; charset=utf-8");
             response.setCharacterEncoding("UTF-8");
+            System.out.println("Put SB to writer");
             response.getWriter().print(sb.toString());
         }
     }
