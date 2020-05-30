@@ -18,53 +18,53 @@ and open the template in the editor.
             body{
                 margin-bottom: 55px;
             }
-           #leafletInstanceContainer { 
-               height: 44em;
-               background-image: url(images/earth.gif);
-               background-repeat: no-repeat;
-               background-attachment: local;
-               background-position: center -19em;
-               background-size: 85em;
-               border: 1px solid black;
-           }
-           #loadingMessage{
-               text-align: center;
-               background-color: white;
-               animation-name: color;
-               animation-duration: 2s;
-               animation-iteration-count: infinite;
-           }
-           #currentCoords{
-               font-weight: bold;
-           }
+            #leafletInstanceContainer { 
+                height: 44em;
+                background-image: url(images/earth.gif);
+                background-repeat: no-repeat;
+                background-attachment: local;
+                background-position: center -19em;
+                background-size: 85em;
+                border: 1px solid black;
+            }
+            #loadingMessage{
+                text-align: center;
+                background-color: white;
+                animation-name: color;
+                animation-duration: 2s;
+                animation-iteration-count: infinite;
+            }
+            #currentCoords{
+                font-weight: bold;
+            }
            
-           .color1{
-               background-color: #336699;
-           }
+            .color1{
+                background-color: #336699;
+            }
            
-           .color2{
-               background-color: #00cc00;
-           }
+            .color2{
+                background-color: #00cc00;
+            }
            
-           .color3{
-               background-color: #ff9900;
-           }
+            .color3{
+                background-color: #ff9900;
+            }
            
-           .color4{
-               background-color: #ff3333;
-           }
+            .color4{
+                background-color: #ff3333;
+            }
            
-           .color5{
-               background-color: #800060;
-           }
+            .color5{
+                background-color: #800060;
+            }
            
-           .color6{
-               background-color: #b5a4a3;
-           }
+            .color6{
+                background-color: #b5a4a3;
+            }
            
-           .tag{
-               color:white;
-           }
+            .tag{
+                color:white;
+            }
            
            .grouped input{
                 height: 1.5em;
@@ -99,31 +99,74 @@ and open the template in the editor.
             }
             
             @keyframes color {
-            0% {
-              background-color: white;
+                0% {
+                  background-color: white;
+                }
+                50% {
+                  background-color: darkgrey;
+                }
+                100 {
+                  background-color: white;
+                }
             }
-            50% {
-              background-color: darkgrey;
+            footer{
+              bottom : 0;
+              background-color : #FFF;
+              z-index : 1;
             }
-            100 {
-              background-color: white;
+            header {
+                background: #222;
+                width: 100%;
+                padding: 1rem;
+                position: relative;
+                box-shadow: 0 0 3rem #001e3c;
+                margin-bottom: 3rem;
             }
-          }
-          footer{
-            bottom : 0;
-            background-color : #FFF;
-            z-index : 1;
-          }
- 
+            header small {
+                position: absolute;
+                bottom: 1rem;
+                line-height: 1;
+                margin-left: 17.3333%;
+                color: #dfdfdf;
+            }
+            header h1 {
+                color: #a3d1ff;
+                top: 3rem;
+                letter-spacing: .75rem;
+                position: relative;
+                font-weight: 300;
+            }
+
+            header img{
+                max-width: 75%;
+            }
+            
+            .card header{
+                background-color: white;
+                box-shadow: none;
+                margin-bottom: 1em;
+                padding: 0px;
+            }
            
         </style>
     </head>
     
     <body>
+        <header>
+            <div class="row">
+                <a class="two columns" href="http://rerum.io">
+                    <img src="https://centerfordigitalhumanities.github.io/rerum/web/logo.png" alt="logo" class="u-full-width">
+                </a>
+                <small class="rerum_shimmer">reconditorium eximium rerum universalium mutabiliumque</small>
+                <h1 class="ten columns ">
+                    <span>rerum geocoder</span>
+                </h1>
+            </div>
+        </header>
         <div class="container">
             <p class="howTo" id='howTo'> 
                 View the map below for rendered IIIF geocoding Annotations.  Pan and zoom are supported. Supplying direct coordinates is available below the map.
-                <a onclick="DEMO.mymap.flyTo([12,12],2)">[Shift] + [Z]</a> will zoom out for a holistic view.  
+                <a onclick="GEOCODER.mymap.flyTo([12,12],2)">[Shift] + [Z]</a> will zoom out for a holistic view.  
                 Click the colored buttons below the map to filter rendered annotations by the application named on the button.  
                 The 'IIIFy' button will filter by annotations that target a IIIF data resource.  
                 Clicking any dot on the map will show applicable information about the target when the URI is resolvable.
@@ -131,7 +174,7 @@ and open the template in the editor.
             <div id="leafletInstanceContainer"><div id="loadingMessage" style="text-align: center;">Gathering Resource Data From Around The World...</div></div>
             <div class="col">
                 <div class="row">
-                    <input id="tog" title="Remove all assertions that do not target IIIF resources." type="button" class="tag is-small color6" value="IIIF Assertions Only" app="isIIIF" onclick="DEMO.filterMarkers(event)" />
+                    <input id="tog" title="Remove all assertions that do not target IIIF resources." type="button" class="tag is-small color6" value="IIIF Assertions Only" app="isIIIF" onclick="GEOCODER.filterMarkers(event)" />
                 </div>
             </div>
 
@@ -144,8 +187,7 @@ and open the template in the editor.
                     </div>
                 </div>
                 <footer>
-                    <input id='goToCoords' value="Go To Coordinates" type="button" class="tag is-small" onclick="DEMO.goToCoords(event)"/>
-                    <!--<input value="Refresh Markers" type="button" class="tag is-small" onclick="DEMO.refreshMarkers(event)"/>--> 
+                    <input id='goToCoords' value="Go To Coordinates" type="button" class="tag is-small" onclick="GEOCODER.goToCoords(event)"/>
                 </footer>
             </div>
         </div>
@@ -153,6 +195,7 @@ and open the template in the editor.
             <small>&copy;2020 Walter J. Ong, S.J. Center for Digital Humanities</small>
             <img class="brand" src="https://www.slu.edu/marcom/tools-downloads/imgs/logo/left-aligned/slu_logoleftaligned_rgb.png">
             <img class="brand" src="https://blog.ongcdh.org/blog/wp-content/uploads/2018/05/logo-dark.png">
+            <img class="brand" src="https://centerfordigitalhumanities.github.io/rerum/web/logo.png"><small>RERUM v1</small>
         </footer>
     </body>
     
@@ -178,7 +221,7 @@ and open the template in the editor.
                 switch (key) {
                   case 90: 
                       //Shift + Z will do the zoom out behavior
-                      DEMO.mymap.flyTo([12,12],2)
+                      GEOCODER.mymap.flyTo([12,12],2)
                     break
                   default:
                 }

@@ -21,8 +21,52 @@ and open the template in the editor.
             background-color : #FFF;
             z-index : 1;
         }
+        header {
+            background: #222;
+            width: 100%;
+            padding: 1rem;
+            position: relative;
+            box-shadow: 0 0 3rem #001e3c;
+            margin-bottom: 3rem;
+        }
+        header small {
+            position: absolute;
+            bottom: 1rem;
+            line-height: 1;
+            margin-left: 17.3333%;
+            color: #dfdfdf;
+        }
+        header h1 {
+            color: #a3d1ff;
+            top: 3rem;
+            letter-spacing: .75rem;
+            position: relative;
+            font-weight: 300;
+        }
+        
+        header img{
+            max-width: 75%;
+        }
+        
+        .card header{
+            background-color: white;
+            box-shadow: none;
+            margin-bottom: 1em;
+            padding: 0px;
+        }
     </style>
     <body>
+        <header>
+            <div class="row">
+                <a class="two columns" href="http://rerum.io">
+                    <img src="https://centerfordigitalhumanities.github.io/rerum/web/logo.png" alt="logo" class="u-full-width">
+                </a>
+                <small class="rerum_shimmer">reconditorium eximium rerum universalium mutabiliumque</small>
+                <h1 class="ten columns ">
+                    <span>rerum geocoder</span>
+                </h1>
+            </div>
+        </header>
         <div class="container">
             <p>
                 Welcome to the RERUM Geocoder hosted by the Walter J. Ong, S.J., Center for Digital Humanities at Saint Louis University.
@@ -33,15 +77,15 @@ and open the template in the editor.
             <p>
                 This application is intended to work within the scope of IIIF and encourages you to target IIIF resources in order to provide
                 then with supplementary geospatial data.  This data is meant to assert the CURRENT location, as a geographic point, of the physical object the
-                resource represents (a painting, a book, etc.).
+                resource represents (a painting, a book, etc.).  In geospatial terms, this assertion will geocode the resource.
             </p>
             <p>
                 To learn more about the Walter J. Ong, S.J., Center for Digital Humanities at Saint Louis University, <a target="_blank" href="https://www.slu.edu/arts-and-sciences/ong-center/">visit their website</a>.<br>
                 To learn more about IIIF and Web Annotations, <a target="_blank" href="https://iiif.io">visit IIIF on the web</a>.<br>
-                To learn more about GeoJSON-LD, <a href="https://geojson.org/geojson-ld/">visit GeoJSON-LD on the web<a>.<br>
+                To learn more about GeoJSON-LD, <a href="https://geojson.org/geojson-ld/">visit GeoJSON-LD on the web</a>.<br>
             </p>
             <p>
-                Ready to explore the RERUM Geocoder?<br>
+                <b>Ready to explore the RERUM Geocoder?</b><br>
                 <input class="button primary" type="button" onclick="document.location.href='annotate.html'" value="Provide A Geocoded Assertion" />
                 <input class="button primary" type="button" onclick="document.location.href='viewAnnotations.html'" value="See Collected Geocoding Information" />
             </p>
@@ -50,6 +94,7 @@ and open the template in the editor.
             <small>&copy;2020 Walter J. Ong, S.J. Center for Digital Humanities</small>
             <img class="brand" src="https://www.slu.edu/marcom/tools-downloads/imgs/logo/left-aligned/slu_logoleftaligned_rgb.png">
             <img class="brand" src="https://blog.ongcdh.org/blog/wp-content/uploads/2018/05/logo-dark.png">
+            <img class="brand" src="https://centerfordigitalhumanities.github.io/rerum/web/logo.png"><small>RERUM v1</small>
         </footer>
     </body>
 </html>

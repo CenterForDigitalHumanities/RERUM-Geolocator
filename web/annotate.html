@@ -26,10 +26,53 @@ and open the template in the editor.
             body{
                 margin-bottom: 55px;
             }
+            header {
+                background: #222;
+                width: 100%;
+                padding: 1rem;
+                position: relative;
+                box-shadow: 0 0 3rem #001e3c;
+                margin-bottom: 3rem;
+            }
+            header small {
+                position: absolute;
+                bottom: 1rem;
+                line-height: 1;
+                margin-left: 17.3333%;
+                color: #dfdfdf;
+            }
+            header h1 {
+                color: #a3d1ff;
+                top: 3rem;
+                letter-spacing: .75rem;
+                position: relative;
+                font-weight: 300;
+            }
+
+            header img{
+                max-width: 75%;
+            }
+            
+            .card header{
+                background-color: white;
+                box-shadow: none;
+                margin-bottom: 1em;
+                padding: 0px;
+            }
         </style>
     </head>
     <body>
-        <!-- Get the URL to target, try to resolve it, confirm and next -->
+        <header>
+            <div class="row">
+                <a class="two columns" href="http://rerum.io">
+                    <img src="https://centerfordigitalhumanities.github.io/rerum/web/logo.png" alt="logo" class="u-full-width">
+                </a>
+                <small class="rerum_shimmer">reconditorium eximium rerum universalium mutabiliumque</small>
+                <h1 class="ten columns ">
+                    <span>rerum geocoder</span>
+                </h1>
+            </div>
+        </header>
         <div class="container">
             <div id="supplyURI" class="card">
                 <header>
@@ -109,7 +152,7 @@ and open the template in the editor.
                     <div id="annoPreview"> </div>
                 </div>
                 <footer>
-                    <input type="button" class="button primary" value="Create Annotation" app="RERUM Geocoder" onclick="DEMO.submitAnno(event, 'geocoding@rerum.io')" />
+                    <input type="button" class="button primary" value="Create Annotation" app="RERUM Geocoder" onclick="GEOCODER.submitAnno(event, 'geocoding@rerum.io')" />
                     <input type="button" class="button Primary" value="Restart" onclick="restart()" />
                 </footer>
             </div>
@@ -118,6 +161,7 @@ and open the template in the editor.
             <small>&copy;2020 Walter J. Ong, S.J. Center for Digital Humanities</small>
             <img class="brand" src="https://www.slu.edu/marcom/tools-downloads/imgs/logo/left-aligned/slu_logoleftaligned_rgb.png">
             <img class="brand" src="https://blog.ongcdh.org/blog/wp-content/uploads/2018/05/logo-dark.png">
+            <img class="brand" src="https://centerfordigitalhumanities.github.io/rerum/web/logo.png"><small>RERUM v1</small>
         </footer>
     </body>
     <script>
@@ -177,12 +221,13 @@ and open the template in the editor.
                     "@context":["http://geojson.org/geojson-ld/geojson-context.jsonld", "http://iiif.io/api/presentation/3/context.json"],
                     "type":"Annotation",
                     "motivation":"geocode",
-                    "target":targetURL,   
                     "body":geoJSON,
+                    "target":targetURL,   
                     "creator":"geocoding@rerum.io"
                 }
                 createAnnotation.classList.remove("is-hidden")
                 annoPreview.innerHTML = `<pre>${JSON.stringify(demoAnno,null,'\t')}</pre>`
+                coordinatesCard.classList.add("is-hidden")
             }
             else{
                 alert("You must provide a latitude and a longitude to continue")

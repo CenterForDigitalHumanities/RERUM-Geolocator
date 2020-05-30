@@ -64,7 +64,6 @@ GEOCODER.init =  async function(){
             })
             if(targetObj){
                 isIIIF = GEOCODER.checkForIIIF(targetObj)
-  
                 //v3 first
                 if(targetObj.hasOwnProperty("summary")){
                     if(typeof targetObj.label === "string"){
