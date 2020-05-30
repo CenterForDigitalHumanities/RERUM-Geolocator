@@ -13,100 +13,109 @@ and open the template in the editor.
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin="" />
         <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
         <script src="https://cdn.osmbuildings.org/classic/0.2.2b/OSMBuildings-Leaflet.js"></script>
-        <script src="js/leafletHelper.js"></script>
-        <script src="js/demo.js"></script>
+        <script src="js/app.js"></script>
         <style>
             #leafletPreview {
                 height: 40rem;
             }
+            footer{
+                bottom : 0;
+                background-color : #FFF;
+                z-index : 1;
+            }
+            body{
+                margin-bottom: 55px;
+            }
         </style>
     </head>
-    <body class="container">
+    <body>
         <!-- Get the URL to target, try to resolve it, confirm and next -->
-        <div id="supplyURI" class="card">
-            <header>
-                Supply an existing JSON-LD object URI to assert coordinates upon to begin.  
-                We encourage that your provide your favorite IIIF object that contains a label and/or description. 
-            </header>
-            <div class="card_body">
-                <label>Object URI</label><input id="objURI" type="text" />
-            </div>
-            <footer>
-                <input type="button" class="button primary" value="Use This URI" onclick="provideTargetID(event)"/>
-            </footer>
-        </div>
-        
-        <div id="confirmURI" class="card is-hidden notfirst">
-            <header>Resolved URI</header>
-            <div class="card_body">
-                <div id="URIpreview">
-                    
+        <div class="container">
+            <div id="supplyURI" class="card">
+                <header>
+                    Supply an existing JSON-LD object URI to assert coordinates upon to begin.  
+                    We encourage that your provide your favorite IIIF object that contains a label and/or description. 
+                </header>
+                <div class="card_body">
+                    <label>Object URI</label><input id="objURI" type="text" />
                 </div>
+                <footer>
+                    <input type="button" class="button primary" value="Use This URI" onclick="provideTargetID(event)"/>
+                </footer>
             </div>
-            <footer>
-                <input type="button" class="button primary" value="Confirm URI" onclick="confirmTarget(event)"/>
-            </footer>
-        </div>
 
-        <!-- Get the Lat and Long, allow them to use Leaflet to provide, use Leaflet to preview and confirm -->      
-        <div id="coordinatesCard" style="visibility:hidden;" class="card notfirst">
-            <header title="Use the map below to pan around.  Click to be given the option to use coordinates, 
-            or enter coordinates manually.">
-                Use the map to select coordinates.  You may also supply coordinates manually.
-            </header>
-            <div class="card-body">
-                <div class="grouped">
-                    <label>Latitude</label>
-                    <input id="leafLat" step=".000000001" type="number"/>
-                    <label>Longitude</label>
-                    <input id="leafLong" step=".000000001" type="number"/>
+            <div id="confirmURI" class="card is-hidden notfirst">
+                <header>Resolved URI</header>
+                <div class="card_body">
+                    <div id="URIpreview">
+
+                    </div>
                 </div>
-                <div title="Use the map below to pan around.  Click to be given the option to use coordinates, or enter coordinates manually." id="leafletPreview" class="col"></div>
+                <footer>
+                    <input type="button" class="button primary" value="Confirm URI" onclick="confirmTarget(event)"/>
+                </footer>
             </div>
-            <footer>
-                <input type="button" class="button primary" value="Confirm Coordinates" onclick="previewAnnotation(event)"/>
-            </footer>
-        </div>
-        <script>
-            /**
-             * Generate a map for a user to select coordinates on.  Have it update and Lat and Long are provided.
-             * @type type
-             */
-            var previewMap = L.map('leafletPreview').setView([38.628009, -90.201101], 16)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(previewMap);
-            var osmb = new OSMBuildings(previewMap).load('https://{s}.data.osmbuildings.org/0.2/anonymous/tile/{z}/{x}/{y}.json')
-            leafLat.oninput = updateGeometry
-            leafLong.oninput = updateGeometry
-            function updateGeometry(event, clickedLat, clickedLong) {
-                event.preventDefault()
-                let lat = clickedLat ? clickedLat : leafLat.value
-                lat = parseInt(lat * 1000000) / 1000000
-                let long =  clickedLong ? clickedLong : leafLong.value
-                long= parseInt(long * 1000000) / 1000000
-                if (lat && long) {
-                    previewMap.setView([lat, long], 16)
+
+            <!-- Get the Lat and Long, allow them to use Leaflet to provide, use Leaflet to preview and confirm -->      
+            <div id="coordinatesCard" style="visibility:hidden;" class="card notfirst">
+                <header title="Use the map below to pan around.  Click to be given the option to use coordinates, 
+                or enter coordinates manually.">
+                    Use the map to select coordinates.  You may also supply coordinates manually.
+                </header>
+                <div class="card-body">
+                    <div class="grouped">
+                        <label>Latitude</label>
+                        <input id="leafLat" step=".000000001" type="number"/>
+                        <label>Longitude</label>
+                        <input id="leafLong" step=".000000001" type="number"/>
+                    </div>
+                    <div title="Use the map below to pan around.  Click to be given the option to use coordinates, or enter coordinates manually." id="leafletPreview" class="col"></div>
+                </div>
+                <footer>
+                    <input type="button" class="button primary" value="Confirm Coordinates" onclick="previewAnnotation(event)"/>
+                </footer>
+            </div>
+            <script>
+                /**
+                 * Generate a map for a user to select coordinates on.  Have it update and Lat and Long are provided.
+                 * @type type
+                 */
+                var previewMap = L.map('leafletPreview').setView([38.628009, -90.201101], 16)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(previewMap);
+                var osmb = new OSMBuildings(previewMap).load('https://{s}.data.osmbuildings.org/0.2/anonymous/tile/{z}/{x}/{y}.json')
+                leafLat.oninput = updateGeometry
+                leafLong.oninput = updateGeometry
+                function updateGeometry(event, clickedLat, clickedLong) {
+                    event.preventDefault()
+                    let lat = clickedLat ? clickedLat : leafLat.value
+                    lat = parseInt(lat * 1000000) / 1000000
+                    let long =  clickedLong ? clickedLong : leafLong.value
+                    long= parseInt(long * 1000000) / 1000000
+                    if (lat && long) {
+                        previewMap.setView([lat, long], 16)
+                    }
+                    leafLat.value = lat
+                    leafLong.value = long
                 }
-                leafLat.value = lat
-                leafLong.value = long
-            }
-            previewMap.on('click', e => L.popup().setLatLng(e.latlng).setContent(`<div>${e.latlng.toString()}<br><button class="tag is-small text-primary bd-primary" onclick="updateGeometry(event,${e.latlng.lat},${e.latlng.lng});">Use These</button></div>`).openOn(previewMap))
-        </script>
+                previewMap.on('click', e => L.popup().setLatLng(e.latlng).setContent(`<div>${e.latlng.toString()}<br><button class="tag is-small text-primary bd-primary" onclick="updateGeometry(event,${e.latlng.lat},${e.latlng.lng});">Use These</button></div>`).openOn(previewMap))
+            </script>
 
-        <div id="createAnnotation" class="card is-hidden notfirst">
-            <header>See your new Annotation and decide whether or not to save it.</header>
-            <div class="card_body">
-                <div id="annoPreview"> </div>
+            <div id="createAnnotation" class="card is-hidden notfirst">
+                <header>See your new Annotation and decide whether or not to save it.</header>
+                <div class="card_body">
+                    <div id="annoPreview"> </div>
+                </div>
+                <footer>
+                    <input type="button" class="button primary" value="Create Annotation" app="RERUM Geocoder" onclick="DEMO.submitAnno(event, 'geocoding@rerum.io')" />
+                    <input type="button" class="button Primary" value="Restart" onclick="restart()" />
+                </footer>
             </div>
-            <footer>
-                <input type="button" class="button primary" value="Create Annotation" app="RERUM Geocoder" onclick="DEMO.submitAnno(event, 'geocoding@rerum.io')" />
-                <input type="button" class="button Primary" value="Restart" onclick="restart()" />
-            </footer>
         </div>
-        <footer>
-            <small>&copy;2019 Walter J. Ong, S.J. Center for Digital Humanities</small>
+        <footer class="nav nav-center text-primary is-fixed is-full-width, is-vertical-align">
+            <small>&copy;2020 Walter J. Ong, S.J. Center for Digital Humanities</small>
             <img class="brand" src="https://www.slu.edu/marcom/tools-downloads/imgs/logo/left-aligned/slu_logoleftaligned_rgb.png">
             <img class="brand" src="https://blog.ongcdh.org/blog/wp-content/uploads/2018/05/logo-dark.png">
         </footer>

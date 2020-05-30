@@ -9,49 +9,47 @@ and open the template in the editor.
         <title>RERUM Geocoder</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
-            integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
-            crossorigin=""/>
-         <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
-            integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
-            crossorigin="">
-         </script>
-         <script src="js/leafletHelper.js"></script>  
+        <link rel="stylesheet" href="https://unpkg.com/chota@latest">
+        <script src="js/app.js"></script>  
     </head>
+    <style>
+        body{
+            margin-bottom: 55px;
+        }
+        footer{
+            bottom : 0;
+            background-color : #FFF;
+            z-index : 1;
+        }
+    </style>
     <body>
-        <div id="main">
+        <div class="container">
             <p>
-            Welcome to the RERUM Geocoder hosted by the Walter J. Ong, S.J., Center for Digital Humanities at Saint Louis University.
-            This small application creates GeoJSON-LD Points as Web Annotations.  You can target any Linked Open Data resource in the world
-            and provide coordinates as supplementary data.  This does not affect the original nor does it notify the resource owner of the
-            assertion.  However, a UI is provided to see the Points provided on a Leaflet map.  
+                Welcome to the RERUM Geocoder hosted by the Walter J. Ong, S.J., Center for Digital Humanities at Saint Louis University.
+                This small application creates GeoJSON-LD Points as Web Annotations.  You can target any Linked Open Data resource in the world
+                and provide coordinates as supplementary data.  This does not affect the original resource nor does it notify the resource owner of the
+                assertion.  A UI is provided to see the Points displayed on a Leaflet map.  
             </p>
             <p>
-            This application is intended to work within the scope of IIIF and encourages you to target IIIF resources in order to provide
-            supplementary geospatial data for them.  This data is meant to assert the CURRENT location of the physical object the IIIF
-            resource type represents.  
+                This application is intended to work within the scope of IIIF and encourages you to target IIIF resources in order to provide
+                then with supplementary geospatial data.  This data is meant to assert the CURRENT location, as a geographic point, of the physical object the
+                resource represents (a painting, a book, etc.).
             </p>
             <p>
-            To learn more about the Walter J. Ong, S.J., Center for Digital Humanities at Saint Louis University, <a target="_blank" href="https://www.slu.edu/arts-and-sciences/ong-center/">visit their website</a>.
-                
-            To learn more about IIIF and Web Annotations, <a target="_blank" href="https://iiif.io">visit IIIF on the web</a>.
-            
-            To learn more about GeoJSON-LD, <a href="https://geojson.org/geojson-ld/">visit this page about the standard<a>.
+                To learn more about the Walter J. Ong, S.J., Center for Digital Humanities at Saint Louis University, <a target="_blank" href="https://www.slu.edu/arts-and-sciences/ong-center/">visit their website</a>.<br>
+                To learn more about IIIF and Web Annotations, <a target="_blank" href="https://iiif.io">visit IIIF on the web</a>.<br>
+                To learn more about GeoJSON-LD, <a href="https://geojson.org/geojson-ld/">visit GeoJSON-LD on the web<a>.<br>
             </p>
             <p>
-                Ready to explore the RERUM Geocoder?
-                <input type="button" onclick="document.location.href='annotate.html'" value="Provide A Geocoded Assertion" />
-                <input type="button" onclick="document.location.href='viewAnnotations.html'" value="See Collected Geocoding Information" />
+                Ready to explore the RERUM Geocoder?<br>
+                <input class="button primary" type="button" onclick="document.location.href='annotate.html'" value="Provide A Geocoded Assertion" />
+                <input class="button primary" type="button" onclick="document.location.href='viewAnnotations.html'" value="See Collected Geocoding Information" />
             </p>
         </div>
-        <footer>
-            <small>&copy;2019 Walter J. Ong, S.J. Center for Digital Humanities</small>
+        <footer class="nav nav-center text-primary is-fixed is-full-width, is-vertical-align">
+            <small>&copy;2020 Walter J. Ong, S.J. Center for Digital Humanities</small>
             <img class="brand" src="https://www.slu.edu/marcom/tools-downloads/imgs/logo/left-aligned/slu_logoleftaligned_rgb.png">
             <img class="brand" src="https://blog.ongcdh.org/blog/wp-content/uploads/2018/05/logo-dark.png">
         </footer>
     </body>
-    
-    <script>
-        
-    </script>
 </html>

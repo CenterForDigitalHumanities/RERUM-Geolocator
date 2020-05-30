@@ -46,7 +46,6 @@ GEOCODER.init =  async function(){
                anno.body.properties = {}
            }
            anno.body.properties.targetID = anno.target ? anno.target : ""
-           anno.body.properties.isUpdated = GEOCODER.checkForUpdated(anno)
            return anno.body
         })
     })
@@ -55,30 +54,57 @@ GEOCODER.init =  async function(){
         let isIIIF = false
         let allGeos = await geos.map(async function(geoJSON){ 
             let targetURI = geoJSON.properties["@id"] ? geoJSON.properties["@id"] : geoJSON.properties.targetID ? geoJSON.properties.targetID : ""
-            let targetProps = {"label":"Target Label Unknown","description":"Target Description Unknown", "creator" : "geocoding@rerum.io", "isIIIF":false, "isUpdated":geoJSON.properties.isUpdated}
+            let targetProps = {"label":"Target Label Unknown","description":"Target Description Unknown", "creator" : "geocoding@rerum.io", "isIIIF":false}
             targetProps.targetID = targetURI
-            if(geoJSON.hasOwnProperty("properties") && (geoJSON.properties.label || geoJSON.properties.description) ){
-                targetProps = geoJSON.properties
-                targetProps.creator = "geocoding@rerum.io"
-                targetProps.targetID = targetURI
+            let targetObj = await fetch(targetURI)
+            .then(resp => resp.json())
+            .catch(err => {
+                console.error(err)
+                return null
+            })
+            if(targetObj){
+                isIIIF = GEOCODER.checkForIIIF(targetObj)
+  
+                //v3 first
+                if(targetObj.hasOwnProperty("summary")){
+                    if(typeof targetObj.label === "string"){
+                        targetObjDescription = targetObj.summary
+                    }
+                    else{
+                        if(targetObj.summary.hasOwnProperty("en")){
+                            targetObjDescription = targetObj.summary.en[0] ? targetObj.summary.en[0] : "No English description provided.  See targeted resource for more details."
+                        }
+                        else{
+                            targetObjDescription = "No English description provided.  See targeted resource for more details."
+                        }
+                    }
+                }
+                if(targetObjDescription === "No English description provided.  See targeted resource for more details."){
+                    if(targetObj.hasOwnProperty("description")){
+                        targetObjDescription = targetObj.description ? targetObj.description : "No English description provided.  See targeted resource for more details."
+                    }
+                }
+                if(targetObj.hasOwnProperty("label")){
+                    if(typeof targetObj.label === "string"){
+                        targetObjLabel = targetObj.label
+                    }
+                    else{
+                        if(targetObj.label.hasOwnProperty("en")){
+                            targetObjLabel = targetObj.label.en[0] ? targetObj.label.en[0] : "No English label provided.  See targeted resource for more details."
+                        }
+                        targetObjLabel = "No English label provided.  See targeted resource for more details."
+                    }
+                }
+                if(targetObjLabel=== "No English label provided.  See targeted resource for more details."){
+                    if(targetObj.hasOwnProperty("name") && typeof targetObj.name === "string"){
+                        targetObjLabel = targetObj.name ? targetObj.name : "No English label provided.  See targeted resource for more details."
+                    }
+                }
+                targetProps = {"targetID":targetURI, "label":targetObjLabel, "description":targetObjDescription, "creator":"geocoding@rerum.io", "isIIIF":isIIIF}
             }
             else{
-               let targetObj = await fetch(targetURI)
-                .then(resp => resp.json())
-                .catch(err => {
-                    console.error(err)
-                    return null
-                })
-                if(targetObj){
-                    isIIIF = GEOCODER.checkForIIIF(targetObj)
-                    targetObjDescription = targetObj.description ? targetObj.description : "Target Description Unknown"
-                    targetObjLabel = targetObj.label ? targetObj.label : targetObj.name ? targetObj.name : "Target Label Unknown"
-                    targetProps = {"targetID":targetURI, "label":targetObjLabel, "description":targetObjDescription, "creator":"geocoding@rerum.io", "isIIIF":isIIIF, "isUpdated":geoJSON.properties.isUpdated}
-                }
-                else{
-                    //alert("Target URI could not be resolved.  The annotation will still be created and target the URI provided, but certain information will be unknown.")
-                } 
-            }
+                //This geo assertion is not well defined because its target is not well defined or unresolvable.
+            } 
             return {"@id":geoJSON["@id"], "properties":targetProps, "type":"Feature", "geometry":geoJSON.geometry} 
         })
         return Promise.all(allGeos)
@@ -87,7 +113,7 @@ GEOCODER.init =  async function(){
         console.error(err)
         return []
     })
-
+    GEOCODER.initializeMap(latlong, geoAssertions)
 }
     
 GEOCODER.initializeMap = async function(coords, geoMarkers){
