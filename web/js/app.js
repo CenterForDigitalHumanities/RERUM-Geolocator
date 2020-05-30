@@ -53,7 +53,8 @@ GEOCODER.init =  async function(){
         })
     })
     .then(async function(geos) {
-        let targetObjDescription, targetObjLabel = ""
+        let targetObjDescription = "No English description provided.  See targeted resource for more details."
+        let targetObjLabel = "No English label provided.  See targeted resource for more details."
         let isIIIF = false
         let allGeos = await geos.map(async function(geoJSON){ 
             let targetURI = geoJSON.properties["@id"] ? geoJSON.properties["@id"] : geoJSON.properties.targetID ? geoJSON.properties.targetID : ""
@@ -69,7 +70,7 @@ GEOCODER.init =  async function(){
                 isIIIF = GEOCODER.checkForIIIF(targetObj)
                 //v3 first
                 if(targetObj.hasOwnProperty("summary")){
-                    if(typeof targetObj.label === "string"){
+                    if(typeof targetObj.summary === "string"){
                         targetObjDescription = targetObj.summary
                     }
                     else{
@@ -82,7 +83,7 @@ GEOCODER.init =  async function(){
                     }
                 }
                 if(targetObjDescription === "No English description provided.  See targeted resource for more details."){
-                    if(targetObj.hasOwnProperty("description")){
+                    if(targetObj.hasOwnProperty("description") && typeof targetObj.description === "string"){
                         targetObjDescription = targetObj.description ? targetObj.description : "No English description provided.  See targeted resource for more details."
                     }
                 }
@@ -94,7 +95,10 @@ GEOCODER.init =  async function(){
                         if(targetObj.label.hasOwnProperty("en")){
                             targetObjLabel = targetObj.label.en[0] ? targetObj.label.en[0] : "No English label provided.  See targeted resource for more details."
                         }
-                        targetObjLabel = "No English label provided.  See targeted resource for more details."
+                        else{
+                            targetObjLabel = "No English label provided.  See targeted resource for more details."
+                        }
+                        
                     }
                 }
                 if(targetObjLabel=== "No English label provided.  See targeted resource for more details."){
