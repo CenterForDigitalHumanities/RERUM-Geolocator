@@ -12,12 +12,11 @@ GEOCODER.mymap={}
 GEOCODER.APPAGENT = "http://devstore.rerum.io/v1/id/5ed28964e4b048da2fa4be2b"
 
 GEOCODER.URLS = {
-    BASE_ID: "http://devstore.rerum.io/v1",
-    DELETE: "http://tinydev.rerum.io/app/delete",
-    CREATE: "http://tinydev.rerum.io/app/create",
-    UPDATE: "http://tinydev.rerum.io/app/update",
-    QUERY: "http://tinydev.rerum.io/app/query",
-    OVERWRITE: "http://tinydev.rerum.io/app/overwrite"
+    DELETE: "delete",
+    CREATE: "create",
+    UPDATE: "update",
+    QUERY: "query",
+    OVERWRITE: "overwrite"
 }
 
 GEOCODER.init =  async function(){
