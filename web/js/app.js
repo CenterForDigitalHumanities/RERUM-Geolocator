@@ -19,6 +19,127 @@ GEOCODER.URLS = {
     OVERWRITE: "overwrite"
 }
 
+GEOCODER.consumeManifestForGeoJSON = async function(manifestURL){
+    let r = []
+    let manifestObj = await fetch(manifestURL)
+        .then(resp => resp.json())
+        .then(man => {return man})
+        .catch(err => {return null})
+   
+    if(manifestObj){
+        let manifestResourceType = manifestObj.type ? manifestObj.type : manifestObj["@type"] ? manifestObj["@type"] : ""
+        if(manifestResourceType !== "Manifest"){
+            alert("The data resource must be a IIIF Presentation API 3 'Manifest' resource types.  Please check the type.")
+            return r
+        }
+        if (manifestObj.hasOwnProperty("@context")){
+            if(typeof manifestObj["@context"] === "string" && manifestObj["@context"] === "http://iiif.io/api/presentation/3/context.json"){
+                
+            }
+            else if(typeof manifestObj["@context"] === "object" && manifestObj["@context"].length){
+                if(!manifestObj["@context"].includes("http://iiif.io/api/presentation/3/context.json")){
+                    alert("This will only consume IIIF Presentation API 3 Manifest resources.")
+                    return r
+                }
+            }
+            else{
+                alert("This will only consume IIIF Presentation API 3 Manifest resources.")
+                return r
+            }
+        }
+        if(manifestObj.hasOwnProperty("annotations") && manifestObj.annotations.length){
+            return manifestObj.annotations.map(webAnno => {
+                let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
+                let webAnnoBodyType = ""
+                if(webAnnoType === "Annotation"){
+                    webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
+                    if(webAnnoBodyType){
+                        if(typeof webAnnoBodyType === "string"){
+                            if(webAnnoBodyType === "Feature"){
+                                if(!webAnno.body.hasOwnProperty("properties")){
+                                    webAnno.body.properties = {}
+                                }
+                                if(webAnno.hasOwnProperty("creator")){
+                                    webAnno.body.properties.annoCreator = webAnno.creator
+                                }
+                                webAnno.body.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
+                                webAnno.body.properties.targetID = webAnno.target ? webAnno.target : ""
+                                return webAnno.body
+                            }
+                            else if (webAnnoBodyType === "FeatureCollection"){
+                                if(webAnno.hasOwnProperty("features") && webAnno.features.length){
+                                    return webAnno.features.map(feature => {
+                                        //We assume the application that created these coordinates did not apply properties.  
+                                        if(!feature.hasOwnProperty("properties")){
+                                            feature.properties = {}
+                                        }
+                                        if(webAnno.hasOwnProperty("creator")){
+                                            feature.properties.annoCreator = webAnno.creator
+                                        }
+                                        feature.body.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
+                                        feature.body.properties.targetID = webAnno.target ? webAnno.target : ""
+                                        return feature.body
+                                    })
+                                }
+                            }
+                        }
+                    }
+                }
+                else if(webAnnoType === "AnnotationPage"){
+                    if(webAnno.hasOwnProperty("items") && webAnno.items.length){
+                        return webAnno.items.map(webAnno => {
+                            let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
+                            let webAnnoBodyType = ""
+                            if(webAnnoType === "Annotation"){
+                                webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
+                                if(webAnnoBodyType){
+                                    if(typeof webAnnoBodyType === "string"){
+                                        if(webAnnoBodyType === "Feature"){
+                                            if(!webAnno.body.hasOwnProperty("properties")){
+                                                webAnno.body.properties = {}
+                                            }
+                                            if(webAnno.hasOwnProperty("creator")){
+                                                webAnno.body.properties.annoCreator = webAnno.creator
+                                            }
+                                            webAnno.body.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
+                                            webAnno.body.properties.targetID = webAnno.target ? webAnno.target : ""
+                                            return webAnno.body
+                                        }
+                                        else if (webAnnoBodyType === "FeatureCollection"){
+                                            if(webAnno.hasOwnProperty("features") && webAnno.features.length){
+                                                return webAnno.features.map(feature => {
+                                                    //We assume the application that created these coordinates did not apply properties.  
+                                                    if(!feature.hasOwnProperty("properties")){
+                                                        feature.properties = {}
+                                                    }
+                                                    if(webAnno.hasOwnProperty("creator")){
+                                                        feature.properties.annoCreator = webAnno.creator
+                                                    }
+                                                    feature.body.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
+                                                    feature.body.properties.targetID = webAnno.target ? webAnno.target : ""
+                                                    return feature.body
+                                                })
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+        }
+        else{
+            alert("There were annotations found on this Manifest.  Nothing to draw.")
+            return r
+        }
+    }
+    else{
+        alert("There was an error getting the manifest from web.  Please check the URL in a separate tab.")
+        return r
+    }
+}
+
 GEOCODER.init =  async function(){
     let latlong = [12, 12] //default starting coords
     let historyWildcard = {"$exists":true, "$size":0}
@@ -32,93 +153,108 @@ GEOCODER.init =  async function(){
         "__rerum.generatedBy"  : GEOCODER.APPAGENT,
         "creator" : "geocoding@rerum.io"
     }
-    let geoAssertions = await fetch(GEOCODER.URLS.QUERY, {
-        method: "POST",
-        mode: "cors",
-        headers: {
-            'Content-Type': 'application/json;charset=utf-8'
-        },
-        body: JSON.stringify(geoAssertionsQuery)
-    })
-    .then(response => response.json())
-    .then(geoMarkers => {
-        return geoMarkers.map(anno => {
-           anno.body["@id"] = anno["@id"] ? anno["@id"] : anno.id ? anno.id : ""
-           //We assume the application that created these coordinates did not apply properties.  
-           if(!anno.body.hasOwnProperty("properties")){
-               anno.body.properties = {}
-           }
-           anno.body.properties.targetID = anno.target ? anno.target : ""
-           return anno.body
+    let formattedWebAnnotationGeoJSON = []
+    let manifestInURL = GEOCODER.getURLVariable("manifest")
+    if(manifestInURL){
+        formattedWebAnnotationGeoJSON = await GEOCODER.consumeManifestForGeoJSON(manifestInURL)
+        .then(geoMarkers => {return geoMarkers})
+        .catch(err => {
+            console.error(err)
+            return []
         })
-    })
-    .then(async function(geos) {
+    }
+    else{
+        formattedWebAnnotationGeoJSON = await fetch(GEOCODER.URLS.QUERY, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8'
+            },
+            body: JSON.stringify(geoAssertionsQuery)
+        })
+        .then(response => response.json())
+        .then(geoMarkers => {
+            return geoMarkers.map(anno => {
+               //We assume the application that created these coordinates did not apply properties.  
+               if(!anno.body.hasOwnProperty("properties")){
+                   anno.body.properties = {}
+               }
+               if(anno.hasOwnProperty("creator")){
+                   anno.body.properties.annoCreator = anno.creator
+               }
+               anno.body.properties.annoID = anno["@id"] ? anno["@id"] : anno.id ? anno.id : ""
+               anno.body.properties.targetID = anno.target ? anno.target : ""
+               return anno.body
+            })
+        })
+        .catch(err => {
+            console.error(err)
+            return []
+        })
+    }
+    formattedWebAnnotationGeoJSON = formattedWebAnnotationGeoJSON.flat(1) //AnnotationPages and FeatureCollections cause arrays in arrays.  
+    let allGeos = await formattedWebAnnotationGeoJSON.map(async function(geoJSON){ 
         let targetObjDescription = "No English description provided.  See targeted resource for more details."
         let targetObjLabel = "No English label provided.  See targeted resource for more details."
         let isIIIF = false
-        let allGeos = await geos.map(async function(geoJSON){ 
-            let targetURI = geoJSON.properties["@id"] ? geoJSON.properties["@id"] : geoJSON.properties.targetID ? geoJSON.properties.targetID : ""
-            let targetProps = {"label":"Target Label Unknown","description":"Target Description Unknown", "creator" : "geocoding@rerum.io", "isIIIF":false}
-            targetProps.targetID = targetURI
-            let targetObj = await fetch(targetURI)
-            .then(resp => resp.json())
-            .catch(err => {
-                console.error(err)
-                return null
-            })
-            if(targetObj){
-                isIIIF = GEOCODER.checkForIIIF(targetObj)
-                //v3 first
-                if(targetObj.hasOwnProperty("summary")){
-                    if(typeof targetObj.summary === "string"){
-                        targetObjDescription = targetObj.summary
-                    }
-                    else{
-                        if(targetObj.summary.hasOwnProperty("en")){
-                            targetObjDescription = targetObj.summary.en[0] ? targetObj.summary.en[0] : "No English description provided.  See targeted resource for more details."
-                        }
-                        else{
-                            targetObjDescription = "No English description provided.  See targeted resource for more details."
-                        }
-                    }
-                }
-                if(targetObjDescription === "No English description provided.  See targeted resource for more details."){
-                    if(targetObj.hasOwnProperty("description") && typeof targetObj.description === "string"){
-                        targetObjDescription = targetObj.description ? targetObj.description : "No English description provided.  See targeted resource for more details."
-                    }
-                }
-                if(targetObj.hasOwnProperty("label")){
-                    if(typeof targetObj.label === "string"){
-                        targetObjLabel = targetObj.label
-                    }
-                    else{
-                        if(targetObj.label.hasOwnProperty("en")){
-                            targetObjLabel = targetObj.label.en[0] ? targetObj.label.en[0] : "No English label provided.  See targeted resource for more details."
-                        }
-                        else{
-                            targetObjLabel = "No English label provided.  See targeted resource for more details."
-                        }
-                        
-                    }
-                }
-                if(targetObjLabel=== "No English label provided.  See targeted resource for more details."){
-                    if(targetObj.hasOwnProperty("name") && typeof targetObj.name === "string"){
-                        targetObjLabel = targetObj.name ? targetObj.name : "No English label provided.  See targeted resource for more details."
-                    }
-                }
-                targetProps = {"targetID":targetURI, "label":targetObjLabel, "description":targetObjDescription, "creator":"geocoding@rerum.io", "isIIIF":isIIIF}
-            }
-            else{
-                //This geo assertion is not well defined because its target is not well defined or unresolvable.
-            } 
-            return {"@id":geoJSON["@id"], "properties":targetProps, "type":"Feature", "geometry":geoJSON.geometry} 
+        let targetURI = geoJSON.properties.targetID ? geoJSON.properties.targetID : "Error"
+        let annoID = geoJSON.properties.annoID ? geoJSON.properties.annoID : "Unknown"
+        let creator = geoJSON.properties.annoCreator ? geoJSON.properties.annoCreator : "geocoding@rerum.io"
+        let targetProps = {"annoID":annoID, "label":targetObjLabel,"description":targetObjDescription, "creator": creator, "isIIIF":isIIIF}
+        targetProps.targetID = targetURI
+        let targetObj = await fetch(targetURI)
+        .then(resp => resp.json())
+        .catch(err => {
+            console.error(err)
+            return null
         })
-        return Promise.all(allGeos)
-    })           
-    .catch(err => {
-        console.error(err)
-        return []
+        if(targetObj){
+            isIIIF = GEOCODER.checkForIIIF(targetObj)
+            //v3 first
+            if(targetObj.hasOwnProperty("summary")){
+                if(typeof targetObj.summary === "string"){
+                    targetObjDescription = targetObj.summary
+                }
+                else{
+                    if(targetObj.summary.hasOwnProperty("en")){
+                        targetObjDescription = targetObj.summary.en[0] ? targetObj.summary.en[0] : "No English description provided.  See targeted resource for more details."
+                    }
+                    else{
+                        targetObjDescription = "No English description provided.  See targeted resource for more details."
+                    }
+                }
+            }
+            if(targetObjDescription === "No English description provided.  See targeted resource for more details."){
+                if(targetObj.hasOwnProperty("description") && typeof targetObj.description === "string"){
+                    targetObjDescription = targetObj.description ? targetObj.description : "No English description provided.  See targeted resource for more details."
+                }
+            }
+            if(targetObj.hasOwnProperty("label")){
+                if(typeof targetObj.label === "string"){
+                    targetObjLabel = targetObj.label
+                }
+                else{
+                    if(targetObj.label.hasOwnProperty("en")){
+                        targetObjLabel = targetObj.label.en[0] ? targetObj.label.en[0] : "No English label provided.  See targeted resource for more details."
+                    }
+                    else{
+                        targetObjLabel = "No English label provided.  See targeted resource for more details."
+                    }
+                }
+            }
+            if(targetObjLabel=== "No English label provided.  See targeted resource for more details."){
+                if(targetObj.hasOwnProperty("name") && typeof targetObj.name === "string"){
+                    targetObjLabel = targetObj.name ? targetObj.name : "No English label provided.  See targeted resource for more details."
+                }
+            }
+            targetProps = {"annoID":annoID, "targetID":targetURI, "label":targetObjLabel, "description":targetObjDescription, "creator":creator, "isIIIF":isIIIF}
+        }
+        else{
+            //This geo assertion is not well defined because its target is not well defined or unresolvable.
+        } 
+        return {"properties":targetProps, "type":"Feature", "geometry":geoJSON.geometry} 
     })
+    let geoAssertions = await Promise.all(allGeos).then(assertions => {return assertions}).catch(err => {return []})    
     GEOCODER.initializeMap(latlong, geoAssertions)
 }
     
@@ -162,8 +298,8 @@ GEOCODER.pointEachFeature = function (feature, layer) {
         if(feature.properties.label) {
             popupContent += `<div class="featureInfo"><label>Target Label:</label>${feature.properties.label}</div>`
         }
-        if(feature.properties.targetID || feature.properties["@id"]){
-            let targetURI = feature.properties["@id"] ? feature.properties["@id"] : feature.properties.targetID ? feature.properties.targetID : ""
+        if(feature.properties.targetID || feature.properties.annoID){
+            let targetURI = feature.properties.targetID ? feature.properties.targetID : feature.properties.targetID ? feature.properties.targetID : ""
             popupContent += `<div class="featureInfo"><label> Target URI:</label><a target='_blank' href='${targetURI}'>See Target Data</a></div>`
         }
         if(feature.properties.description) {
@@ -172,8 +308,8 @@ GEOCODER.pointEachFeature = function (feature, layer) {
         if(feature.properties.creator) {
             popupContent += `<div class="featureInfo"><label>Annotation Generated By</label>${feature.properties.creator}</div>`
         }
-        if(feature["@id"]) {
-            popupContent += `<div class="featureInfo"><label>Annotation URI:</label><a target='_blank' href='${feature["@id"]}'>See Annotation Data</a></div>`
+        if(feature.properties.annoID) {
+            popupContent += `<div class="featureInfo"><label>Annotation URI:</label><a target='_blank' href='${feature.properties.annoID}'>See Annotation Data</a></div>`
         }
     }
     layer.bindPopup(popupContent);
@@ -275,7 +411,13 @@ GEOCODER.submitAnno = async function(event, app){
         })
         .then(response => response.json())
         .then(newObj => {return newObj.new_obj_state})
-        alert("A coordinate annotation was created that targets "+targetURL+".  Enter new coordinates to create another.")
+        .catch(err => {return null})
+        if(null !== createdObj){
+            GEOCODER.annoSaveCompletedEvent(createdObj)
+        }
+        else{
+            GEOCODER.annoSaveFailedEvent()
+        }
     }
     else{
         alert("The annotation was not created.  You must supply a URI for this annotation to target.")
@@ -300,6 +442,17 @@ GEOCODER.checkForIIIF = function(targetObj){
     }
     return false
 }
+
+GEOCODER.getURLVariable = function(variable)
+    {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i=0;i<vars.length;i++) {
+                var pair = vars[i].split("=");
+                if(pair[0] == variable){return pair[1];}
+        }
+        return(false);
+    }
 
 
 
