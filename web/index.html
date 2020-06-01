@@ -14,7 +14,7 @@ and open the template in the editor.
     </head>
     <style>
         body{
-            margin-bottom: 55px;
+            margin-bottom: 20rem;
         }
         footer{
             bottom : 0;
@@ -53,6 +53,10 @@ and open the template in the editor.
             box-shadow: none;
             margin-bottom: 1em;
             padding: 0px;
+        }
+        .button.primary{
+            display: block;
+            margin: 1rem 0px 0px 0px;
         }
     </style>
     <body>
@@ -97,4 +101,9 @@ and open the template in the editor.
             <a target="_blank" href="http://rerum.io"><img class="brand" src="https://centerfordigitalhumanities.github.io/rerum/web/logo.png"><small>RERUM v1</small></a>
         </footer>
     </body>
+    <script>
+        window.onbeforeunload = function () {
+            window.scrollTo(0,0);
+        }
+    </script>
 </html>

@@ -262,11 +262,11 @@ GEOCODER.initializeMap = async function(coords, geoMarkers){
     GEOCODER.mymap = L.map('leafletInstanceContainer')   
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidGhlaGFiZXMiLCJhIjoiY2pyaTdmNGUzMzQwdDQzcGRwd21ieHF3NCJ9.SSflgKbI8tLQOo2DuzEgRQ', {
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-        maxZoom: 100,
+        maxZoom: 19,
         id: 'mapbox.satellite', //mapbox.streets
         accessToken: 'pk.eyJ1IjoidGhlaGFiZXMiLCJhIjoiY2pyaTdmNGUzMzQwdDQzcGRwd21ieHF3NCJ9.SSflgKbI8tLQOo2DuzEgRQ'
     }).addTo(GEOCODER.mymap);
-    GEOCODER.mymap.setView(coords,8);
+    GEOCODER.mymap.setView(coords,2);
 
     L.geoJSON(geoMarkers, {
         pointToLayer: function (feature, latlng) {
@@ -320,6 +320,7 @@ GEOCODER.goToCoords = function(event){
         let coords = [leafLat.value, leafLong.value]
         GEOCODER.mymap.flyTo(coords,8)
         document.getElementById("currentCoords").innerHTML = "["+coords.toString()+"]"
+        window.scrollTo(0, leafletInstanceContainer.offsetTop - 5)
     }
 }
 

@@ -12,11 +12,12 @@ and open the template in the editor.
         <link rel="stylesheet" href="https://unpkg.com/chota@latest">
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin="" />
         <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
-        <script src="https://cdn.osmbuildings.org/classic/0.2.2b/OSMBuildings-Leaflet.js"></script>
+        <!--<script src="https://cdn.osmbuildings.org/classic/0.2.2b/OSMBuildings-Leaflet.js"></script>-->
         <script src="js/app.js"></script>
         <style>
             #leafletPreview {
-                height: 40rem;
+                height: 48rem;
+                z-index: 0;
             }
             footer{
                 bottom : 0;
@@ -24,7 +25,7 @@ and open the template in the editor.
                 z-index : 1;
             }
             body{
-                margin-bottom: 55px;
+                margin-bottom: 20rem;
             }
             header {
                 background: #222;
@@ -59,6 +60,14 @@ and open the template in the editor.
                 margin-bottom: 1em;
                 padding: 0px;
             }
+            
+            #coordinatesCard{
+                visibility: hidden;
+                position: absolute;
+                width: 100%;
+                max-width: var(--grid-maxWidth);
+                top: 0px;
+            }
         </style>
     </head>
     <body>
@@ -83,27 +92,29 @@ and open the template in the editor.
                     <label>Object URI</label><input id="objURI" type="text" />
                 </div>
                 <footer>
-                    <input type="button" class="button primary" value="Use This URI" onclick="provideTargetID(event)"/>
+                    <input id="uriBtn" type="button" class="button primary" value="Use This URI" onclick="provideTargetID(event)"/>
                 </footer>
             </div>
 
             <div id="confirmURI" class="card is-hidden notfirst">
                 <header>Resolved URI</header>
                 <div class="card_body">
+                    <input type="button" class="button primary" value="Confirm URI" onclick="confirmTarget(event)"/>
                     <div id="URIpreview">
 
                     </div>
                 </div>
                 <footer>
-                    <input type="button" class="button primary" value="Confirm URI" onclick="confirmTarget(event)"/>
+                    
                 </footer>
             </div>
 
             <!-- Get the Lat and Long, allow them to use Leaflet to provide, use Leaflet to preview and confirm -->      
-            <div id="coordinatesCard" class="card notfirst is-hidden">
+            <div id="coordinatesCard" class="card notfirst">
                 <header title="Use the map below to pan around.  Click to be given the option to use coordinates, 
                 or enter coordinates manually.">
                     Use the map to select coordinates.  You may also supply coordinates manually.
+                    <br><input type="button" class="button primary" value="Confirm Coordinates" onclick="previewAnnotation(event)"/>
                 </header>
                 <div class="card-body">
                     <div class="grouped">
@@ -115,7 +126,7 @@ and open the template in the editor.
                     <div title="Use the map below to pan around.  Click to be given the option to use coordinates, or enter coordinates manually." id="leafletPreview" class="col"></div>
                 </div>
                 <footer>
-                    <input type="button" class="button primary" value="Confirm Coordinates" onclick="previewAnnotation(event)"/>
+                    
                 </footer>
             </div>
             <script>
@@ -123,12 +134,15 @@ and open the template in the editor.
                  * Generate a map for a user to select coordinates on.  Have it update and Lat and Long are provided.
                  * @type type
                  */
-                var previewMap = L.map('leafletPreview').setView([38.628009, -90.201101], 16)
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                var previewMap = L.map('leafletPreview').setView([12, 12], 2)
+                
+                L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidGhlaGFiZXMiLCJhIjoiY2pyaTdmNGUzMzQwdDQzcGRwd21ieHF3NCJ9.SSflgKbI8tLQOo2DuzEgRQ', {
+                    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
                     maxZoom: 19,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    id: 'mapbox.satellite', //mapbox.streets
+                    accessToken: 'pk.eyJ1IjoidGhlaGFiZXMiLCJhIjoiY2pyaTdmNGUzMzQwdDQzcGRwd21ieHF3NCJ9.SSflgKbI8tLQOo2DuzEgRQ'
                 }).addTo(previewMap);
-                var osmb = new OSMBuildings(previewMap).load('https://{s}.data.osmbuildings.org/0.2/anonymous/tile/{z}/{x}/{y}.json')
+
                 leafLat.oninput = updateGeometry
                 leafLong.oninput = updateGeometry
                 function updateGeometry(event, clickedLat, clickedLong) {
@@ -147,7 +161,9 @@ and open the template in the editor.
             </script>
 
             <div id="createAnnotation" class="card is-hidden notfirst">
-                <header>See your new Annotation and decide whether or not to save it.</header>
+                <header>
+                    See your new Annotation and decide whether or not to save it.
+                </header>
                 <div class="card_body">
                     <div id="annoPreview"> </div>
                 </div>
@@ -190,6 +206,7 @@ and open the template in the editor.
                 URIpreview.innerHTML=`<pre>${JSON.stringify(targetObj,null,'\t')}</pre>`
             }
             confirmURI.classList.remove("is-hidden")
+            window.scrollTo(confirmURI.offsetTop)
         }
         
         /**
@@ -228,6 +245,7 @@ and open the template in the editor.
                 createAnnotation.classList.remove("is-hidden")
                 annoPreview.innerHTML = `<pre>${JSON.stringify(demoAnno,null,'\t')}</pre>`
                 coordinatesCard.classList.add("is-hidden")
+                window.scrollTo(0,createAnnotation.offsetTop - 5)
             }
             else{
                 alert("You must provide a latitude and a longitude to continue")
@@ -242,7 +260,10 @@ and open the template in the editor.
         function confirmTarget(event){
             supplyURI.classList.add("is-hidden")
             confirmURI.classList.add("is-hidden")
-            coordinatesCard.classList.remove("is-hidden")
+            coordinatesCard.style.visibility = "visible"
+            coordinatesCard.style.top = "auto"
+            coordinatesCard.style.position = "relative"
+            window.scrollTo(0,coordinatesCard.offsetTop-50)
         }
         
         /**
@@ -256,6 +277,21 @@ and open the template in the editor.
             for (let el of document.querySelectorAll('.notfirst')){el.classList.add("is-hidden")}
         }
         
+        window.onbeforeunload = function () {
+            window.scrollTo(0,0)
+        }
+        
+        objURI.onfocus = function(event){
+            window.scrollTo(0,document.body.scrollHeight)
+        }
+        
+        leafLat.onfocus = function(event){
+            window.scrollTo(0,leafLat.offsetTop - 10)
+        }
+        
+        leafLong.onfocus = function(event){
+            window.scrollTo(0,leafLong.offsetTop - 10)
+        }
 
     </script>
 </html>
