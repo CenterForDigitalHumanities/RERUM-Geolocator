@@ -28,7 +28,7 @@ public class TinyTokenManager{
     //Notice that when it is initialized, nothing is set.
     private String currentAccessToken = "";
     private String currentRefreshToken = "";
-    private String propFileLocation = "geocode.properties";
+    private String propFileLocation = "geolocate.properties";
     private String apiSetting = "";
     private Properties props = new Properties();
     
@@ -147,7 +147,7 @@ public class TinyTokenManager{
      * @throws Exception 
      */
     public String generateNewAccessToken() throws SocketTimeoutException, IOException, Exception{
-        System.out.println("Geocode app has to get a new access token...");
+        System.out.println("Geolocator app has to get a new access token...");
         String newAccessToken = "";
         JSONObject jsonReturn = new JSONObject();
         JSONObject tokenRequestParams = new JSONObject();

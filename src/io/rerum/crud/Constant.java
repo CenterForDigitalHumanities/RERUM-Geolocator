@@ -17,5 +17,5 @@ public class Constant {
     public static String RERUM_REFRESH_TOKEN_URL = "http://devstore.rerum.io/v1/api/refreshToken.action";
     
     //https://stackoverflow.com/questions/2395737/java-relative-path-of-a-file-in-a-java-web-application
-    public static String PROPERTIES_FILE_NAME = "geocode.properties";
+    public static String PROPERTIES_FILE_NAME = "geolocate.properties";
 }

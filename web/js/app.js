@@ -5,13 +5,13 @@
  */
 
 
-GEOCODER = {}
+GEOLOCATOR = {}
 
-GEOCODER.mymap={}
+GEOLOCATOR.mymap={}
 
-GEOCODER.APPAGENT = "http://devstore.rerum.io/v1/id/5ed28964e4b048da2fa4be2b"
+GEOLOCATOR.APPAGENT = "http://devstore.rerum.io/v1/id/5ed28964e4b048da2fa4be2b"
 
-GEOCODER.URLS = {
+GEOLOCATOR.URLS = {
     DELETE: "delete",
     CREATE: "create",
     UPDATE: "update",
@@ -19,7 +19,7 @@ GEOCODER.URLS = {
     OVERWRITE: "overwrite"
 }
 
-GEOCODER.consumeManifestForGeoJSON = async function(manifestURL){
+GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
     let r = []
     let manifestObj = await fetch(manifestURL)
         .then(resp => resp.json())
@@ -140,23 +140,23 @@ GEOCODER.consumeManifestForGeoJSON = async function(manifestURL){
     }
 }
 
-GEOCODER.init =  async function(){
+GEOLOCATOR.init =  async function(){
     let latlong = [12, 12] //default starting coords
     let historyWildcard = {"$exists":true, "$size":0}
     let geoWildcard = {"$exists":true}
     let geos = []
-    document.getElementById("leafLat").oninput = GEOCODER.updateGeometry
-    document.getElementById("leafLong").oninput = GEOCODER.updateGeometry
+    document.getElementById("leafLat").oninput = GEOLOCATOR.updateGeometry
+    document.getElementById("leafLong").oninput = GEOLOCATOR.updateGeometry
     //For my map demo app
     let geoAssertionsQuery = {
         "__rerum.history.next": historyWildcard,
-        "__rerum.generatedBy"  : GEOCODER.APPAGENT,
-        "creator" : "geocoding@rerum.io"
+        "__rerum.generatedBy"  : GEOLOCATOR.APPAGENT,
+        "creator" : "geolocating@rerum.io"
     }
     let formattedWebAnnotationGeoJSON = []
-    let manifestInURL = GEOCODER.getURLVariable("manifest")
+    let manifestInURL = GEOLOCATOR.getURLVariable("manifest")
     if(manifestInURL){
-        formattedWebAnnotationGeoJSON = await GEOCODER.consumeManifestForGeoJSON(manifestInURL)
+        formattedWebAnnotationGeoJSON = await GEOLOCATOR.consumeManifestForGeoJSON(manifestInURL)
         .then(geoMarkers => {return geoMarkers})
         .catch(err => {
             console.error(err)
@@ -164,7 +164,7 @@ GEOCODER.init =  async function(){
         })
     }
     else{
-        formattedWebAnnotationGeoJSON = await fetch(GEOCODER.URLS.QUERY, {
+        formattedWebAnnotationGeoJSON = await fetch(GEOLOCATOR.URLS.QUERY, {
             method: "POST",
             mode: "cors",
             headers: {
@@ -199,7 +199,7 @@ GEOCODER.init =  async function(){
         let isIIIF = false
         let targetURI = geoJSON.properties.targetID ? geoJSON.properties.targetID : "Error"
         let annoID = geoJSON.properties.annoID ? geoJSON.properties.annoID : "Unknown"
-        let creator = geoJSON.properties.annoCreator ? geoJSON.properties.annoCreator : "geocoding@rerum.io"
+        let creator = geoJSON.properties.annoCreator ? geoJSON.properties.annoCreator : "geolocating@rerum.io"
         let targetProps = {"annoID":annoID, "label":targetObjLabel,"description":targetObjDescription, "creator": creator, "isIIIF":isIIIF}
         targetProps.targetID = targetURI
         let targetObj = await fetch(targetURI)
@@ -209,7 +209,7 @@ GEOCODER.init =  async function(){
             return null
         })
         if(targetObj){
-            isIIIF = GEOCODER.checkForIIIF(targetObj)
+            isIIIF = GEOLOCATOR.checkForIIIF(targetObj)
             //v3 first
             if(targetObj.hasOwnProperty("summary")){
                 if(typeof targetObj.summary === "string"){
@@ -255,22 +255,22 @@ GEOCODER.init =  async function(){
         return {"properties":targetProps, "type":"Feature", "geometry":geoJSON.geometry} 
     })
     let geoAssertions = await Promise.all(allGeos).then(assertions => {return assertions}).catch(err => {return []})    
-    GEOCODER.initializeMap(latlong, geoAssertions)
+    GEOLOCATOR.initializeMap(latlong, geoAssertions)
 }
     
-GEOCODER.initializeMap = async function(coords, geoMarkers){
-    GEOCODER.mymap = L.map('leafletInstanceContainer')   
+GEOLOCATOR.initializeMap = async function(coords, geoMarkers){
+    GEOLOCATOR.mymap = L.map('leafletInstanceContainer')   
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidGhlaGFiZXMiLCJhIjoiY2pyaTdmNGUzMzQwdDQzcGRwd21ieHF3NCJ9.SSflgKbI8tLQOo2DuzEgRQ', {
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
         maxZoom: 19,
         id: 'mapbox.satellite', //mapbox.streets
         accessToken: 'pk.eyJ1IjoidGhlaGFiZXMiLCJhIjoiY2pyaTdmNGUzMzQwdDQzcGRwd21ieHF3NCJ9.SSflgKbI8tLQOo2DuzEgRQ'
-    }).addTo(GEOCODER.mymap);
-    GEOCODER.mymap.setView(coords,2);
+    }).addTo(GEOLOCATOR.mymap);
+    GEOLOCATOR.mymap.setView(coords,2);
 
     L.geoJSON(geoMarkers, {
         pointToLayer: function (feature, latlng) {
-            let appColor = "#336699"
+            let appColor = "#08c49c"
             return L.circleMarker(latlng, {
                 radius: 8,
                 fillColor: appColor,
@@ -280,13 +280,13 @@ GEOCODER.initializeMap = async function(coords, geoMarkers){
                 fillOpacity: 0.8
             });
         },
-        onEachFeature: GEOCODER.pointEachFeature
-    }).addTo(GEOCODER.mymap)
+        onEachFeature: GEOLOCATOR.pointEachFeature
+    }).addTo(GEOLOCATOR.mymap)
     leafletInstanceContainer.style.backgroundImage = "none"
     loadingMessage.classList.add("is-hidden")
 }
 
-GEOCODER.pointEachFeature = function (feature, layer) {
+GEOLOCATOR.pointEachFeature = function (feature, layer) {
     //@id, label, description
     layer.hasMyPoints = true
     layer.isHiding = false
@@ -315,18 +315,18 @@ GEOCODER.pointEachFeature = function (feature, layer) {
     layer.bindPopup(popupContent);
 }
 
-GEOCODER.goToCoords = function(event){
+GEOLOCATOR.goToCoords = function(event){
     if(leafLat.value && leafLong.value){
         let coords = [leafLat.value, leafLong.value]
-        GEOCODER.mymap.flyTo(coords,8)
+        GEOLOCATOR.mymap.flyTo(coords,8)
         document.getElementById("currentCoords").innerHTML = "["+coords.toString()+"]"
         window.scrollTo(0, leafletInstanceContainer.offsetTop - 5)
     }
 }
 
-GEOCODER.filterMarkers = async function(event){
+GEOLOCATOR.filterMarkers = async function(event){
     let app = event.target.getAttribute("app")
-    GEOCODER.mymap.eachLayer(function(layer) {
+    GEOLOCATOR.mymap.eachLayer(function(layer) {
         if ( layer.hasMyPoints ) {
             if(app === "isIIIF"){
                 if(layer.feature.properties.isIIIF){
@@ -340,7 +340,7 @@ GEOCODER.filterMarkers = async function(event){
                         layer.isHiding = false
                         layer.setRadius(8)
                         layer.getPopup().addEventListener("click")
-                        let appColor = "#336699"
+                        let appColor = "#08c49c"
                         layer.setStyle({
                             color: "#000",
                             fillColor : appColor
@@ -370,7 +370,7 @@ GEOCODER.filterMarkers = async function(event){
  * @param {type} app
  * @return {Boolean}
  */
-GEOCODER.submitAnno = async function(event, app){
+GEOLOCATOR.submitAnno = async function(event, app){
     let geo = {}
     let lat = parseInt(leafLat.value * 1000000) / 1000000
     let long = parseInt(leafLong.value * 1000000) / 1000000
@@ -396,13 +396,13 @@ GEOCODER.submitAnno = async function(event, app){
             {
                 "type":"Annotation",
                 "@context":"http://iiif.io/api/presentation/3/context.json",
-                "motivation":"geocode",
+                "motivation":"geolocate",
                 "target":targetURL,   
                 "body":geoJSON,
-                "creator":"geocoding@rerum.io"
+                "creator":"geolocating@rerum.io"
             }
 
-        let createdObj = await fetch(GEOCODER.URLS.CREATE, {
+        let createdObj = await fetch(GEOLOCATOR.URLS.CREATE, {
             method: "POST",
             mode: "cors",
             headers: {
@@ -414,10 +414,10 @@ GEOCODER.submitAnno = async function(event, app){
         .then(newObj => {return newObj.new_obj_state})
         .catch(err => {return null})
         if(null !== createdObj){
-            GEOCODER.annoSaveCompletedEvent(createdObj)
+            GEOLOCATOR.annoSaveCompletedEvent(createdObj)
         }
         else{
-            GEOCODER.annoSaveFailedEvent()
+            GEOLOCATOR.annoSaveFailedEvent()
         }
     }
     else{
@@ -427,12 +427,22 @@ GEOCODER.submitAnno = async function(event, app){
 
 }
 
+GEOLOCATOR.annoSaveCompletedEvent =function(createdObj){
+    createAnnoBtn.setAttribute("onclick", "document.location.href='viewAnnotations.html'")
+    createAnnoBtn.value="See It In Leaflet."
+    
+}
+
+GEOLOCATOR.annoSaveFailedEvent=function(){
+    alert("The annotation could not be saved.  Check the Network panel in web console to learn more.");
+}
+
 /**
  * Check if the given object has a valid IIIF context associated with it
  * @param {type} obj
  * @return {Boolean}
  */
-GEOCODER.checkForIIIF = function(targetObj){
+GEOLOCATOR.checkForIIIF = function(targetObj){
     if(targetObj["@context"]){
         if(Array.isArray(targetObj["@context"])){
             return targetObj["@context"].includes("http://iiif.io/api/presentation/3/context.json") || targetObj["@context"].includes("http://iiif.io/api/presentation/2/context.json")
@@ -444,7 +454,7 @@ GEOCODER.checkForIIIF = function(targetObj){
     return false
 }
 
-GEOCODER.getURLVariable = function(variable)
+GEOLOCATOR.getURLVariable = function(variable)
     {
         var query = window.location.search.substring(1);
         var vars = query.split("&");
