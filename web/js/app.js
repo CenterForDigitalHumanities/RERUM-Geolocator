@@ -33,17 +33,18 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
             return r
         }
         if (manifestObj.hasOwnProperty("@context")){
-            if(typeof manifestObj["@context"] === "string" && manifestObj["@context"] === "http://iiif.io/api/presentation/3/context.json"){
-                
+            if(!(typeof manifestObj["@context"] === "string" && manifestObj["@context"] === "http://iiif.io/api/presentation/3/context.json")){
+                alert("This will only consume IIIF Presentation API 3 Manifest resources.")
+                return r
             }
-            else if(typeof manifestObj["@context"] === "object" && manifestObj["@context"].length){
+            else if (Array.isArray(manifestObj["@context"]) && manifestObj["@context"].length > 0){
                 if(!manifestObj["@context"].includes("http://iiif.io/api/presentation/3/context.json")){
                     alert("This will only consume IIIF Presentation API 3 Manifest resources.")
                     return r
                 }
             }
-            else{
-                alert("This will only consume IIIF Presentation API 3 Manifest resources.")
+            else if(typeof manifestObj["@context"] === "object"){
+                alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 context.  This will only consume IIIF Presentation API 3 Manifest resources.")
                 return r
             }
         }
@@ -385,7 +386,6 @@ GEOLOCATOR.submitAnno = async function(event, app){
         return false
     }
     let geoJSON = {
-        "@context": "http://geojson.org/geojson-ld/geojson-context.jsonld",
         "properties":{},
         "geometry": geo,
         "type": "Feature"
@@ -395,8 +395,8 @@ GEOLOCATOR.submitAnno = async function(event, app){
         let demoAnno = 
             {
                 "type":"Annotation",
-                "@context":"http://iiif.io/api/presentation/3/context.json",
-                "motivation":"geolocate",
+                "@context":["http://geojson.org/geojson-ld/geojson-context.jsonld", "http://iiif.io/api/presentation/3/context.json"],
+                "motivation":"tagging",
                 "target":targetURL,   
                 "body":geoJSON,
                 "creator":"geolocating@rerum.io"
