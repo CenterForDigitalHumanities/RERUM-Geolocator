@@ -33,7 +33,7 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
             return r
         }
         if (manifestObj.hasOwnProperty("@context")){
-            if(!(typeof manifestObj["@context"] === "string" && manifestObj["@context"] === "http://iiif.io/api/presentation/3/context.json")){
+            if(typeof manifestObj["@context"] === "string" && manifestObj["@context"] !== "http://iiif.io/api/presentation/3/context.json")){
                 alert("This will only consume IIIF Presentation API 3 Manifest resources.")
                 return r
             }
@@ -47,6 +47,10 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
                 alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 context.  This will only consume IIIF Presentation API 3 Manifest resources.")
                 return r
             }
+        }
+        else{
+            alert("This will only consume IIIF Presentation API 3 Manifest resources.  A context (@context) must be present on the resource.")
+            return r
         }
         if(manifestObj.hasOwnProperty("annotations") && manifestObj.annotations.length){
             return manifestObj.annotations.map(webAnno => {
