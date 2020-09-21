@@ -85,7 +85,7 @@ and open the template in the editor.
         <div class="container">
             <div id="supplyURI" class="card">
                 <header>
-                    Supply an existing JSON-LD object URI to assert coordinates upon to begin.  
+                    Supply an existing Web Resource URI to assert coordinates upon to begin.  
                     We encourage that your provide your favorite IIIF object that contains a label and/or description. 
                 </header>
                 <div class="card_body">
@@ -244,7 +244,7 @@ and open the template in the editor.
                 }
                 createAnnotation.classList.remove("is-hidden")
                 annoPreview.innerHTML = `<pre>${JSON.stringify(demoAnno,null,'\t')}</pre>`
-                coordinatesCard.classList.add("is-hidden")
+                coordinatesCard.style.visibility = "hidden"
                 window.scrollTo(0,createAnnotation.offsetTop - 5)
             }
             else{
