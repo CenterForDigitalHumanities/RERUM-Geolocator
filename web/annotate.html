@@ -245,6 +245,7 @@ and open the template in the editor.
                 createAnnotation.classList.remove("is-hidden")
                 annoPreview.innerHTML = `<pre>${JSON.stringify(demoAnno,null,'\t')}</pre>`
                 coordinatesCard.style.visibility = "hidden"
+                coordinatesCard.classList.add("is-hidden")
                 window.scrollTo(0,createAnnotation.offsetTop - 5)
             }
             else{
@@ -261,6 +262,7 @@ and open the template in the editor.
             supplyURI.classList.add("is-hidden")
             confirmURI.classList.add("is-hidden")
             coordinatesCard.style.visibility = "visible"
+            coordinatesCard.classList.remove("is-hidden")
             coordinatesCard.style.top = "auto"
             coordinatesCard.style.position = "relative"
             window.scrollTo(0,coordinatesCard.offsetTop-50)
