@@ -33,7 +33,7 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
             return r
         }
         if (manifestObj.hasOwnProperty("@context")){
-            if(typeof manifestObj["@context"] === "string" && manifestObj["@context"] !== "http://iiif.io/api/presentation/3/context.json")){
+            if(typeof manifestObj["@context"] === "string" && manifestObj["@context"] !== "http://iiif.io/api/presentation/3/context.json"){
                 alert("This will only consume IIIF Presentation API 3 Manifest resources.")
                 return r
             }
