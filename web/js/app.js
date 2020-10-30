@@ -145,7 +145,7 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
     }
 }
 
-GEOLOCATOR.init =  async function(){
+GEOLOCATOR.init =  async function(view){
     let latlong = [12, 12] //default starting coords
     let historyWildcard = {"$exists":true, "$size":0}
     let geoWildcard = {"$exists":true}
@@ -260,10 +260,55 @@ GEOLOCATOR.init =  async function(){
         return {"properties":targetProps, "type":"Feature", "geometry":geoJSON.geometry} 
     })
     let geoAssertions = await Promise.all(allGeos).then(assertions => {return assertions}).catch(err => {return []})    
-    GEOLOCATOR.initializeMap(latlong, geoAssertions)
+    switch(view){
+        case "leaflet":
+            GEOLOCATOR.initializeLeaflet(latlong, geoAssertions)
+        break
+        
+        case "mapML":
+        break
+            GEOLOCATOR.initializeMapML(latlong, geoAssertions)
+        default:
+            alert("boooooo")
+    }
+}
+
+GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
+    GEOLOCATOR.mymap = document.getElementById('mapML-container')   
+    GEOLOCATOR.mymap.setAttribute("lat", coords[0])
+    GEOLOCATOR.mymap.setAttribute("long", coords[1])
+    GEOLOCATOR.mymap.setAttribute("zoom", 1)
+    let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked="">`
+    let mapML_features = geoMarkers.map(geojson_feature => {
+        //We need each of these to be a <feature>.  Right now, they are GeoJSON-LD
+        let feature_creator = geojson_feature.properties.creator
+        let feature_web_URI = geojson_feature.properties.annoID
+        let feature_label = geojson_feature.properties.label
+        let feature_description = geojson_feature.properties.description
+        let feature_describes = geojson_feature.properties.targetID
+        let feature_lat = geojson_feature.geometry.coordinates[0]
+        let feature_long = geojson_feature.geometry.coordinates[1]
+        let feature_type = "point"
+        
+        let geometry = `<geometry><point><coordinates>${feature_lat} ${feature_long}</coordinates></point></geometry>`
+        let properties = 
+        `<properties>
+            <p>Label: ${feature_label}</p>
+            <p>Description ${feature_description}</p>
+            <p>Entity ${feature_describes}</p>
+            <p>Annotation ${feature_web_URI}</p>
+        </propeties>`
+        let feature = `<feature>${properties}${geometry}</feature>`
+        return feature
+     })
+    feature_layer += `${mapML_features}</layer->` 
+    GEOLOCATOR.mymap.style.backgroundImage = "none"
+    loadingMessage.classList.add("is-hidden")
+    //Add the features to the mapml-viewer dynamically
+    GEOLOCATOR.mymap.innerHTML += feature_layer
 }
     
-GEOLOCATOR.initializeMap = async function(coords, geoMarkers){
+GEOLOCATOR.initializeLeaflet = async function(coords, geoMarkers){
     GEOLOCATOR.mymap = L.map('leafletInstanceContainer')   
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidGhlaGFiZXMiLCJhIjoiY2pyaTdmNGUzMzQwdDQzcGRwd21ieHF3NCJ9.SSflgKbI8tLQOo2DuzEgRQ', {
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
@@ -432,7 +477,7 @@ GEOLOCATOR.submitAnno = async function(event, app){
 }
 
 GEOLOCATOR.annoSaveCompletedEvent =function(createdObj){
-    createAnnoBtn.setAttribute("onclick", "document.location.href='viewAnnotations.html'")
+    createAnnoBtn.setAttribute("onclick", "document.location.href='leaflet-view.html'")
     createAnnoBtn.value="See It In Leaflet."
     
 }
