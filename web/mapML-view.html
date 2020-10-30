@@ -16,7 +16,7 @@ and open the template in the editor.
             body{
                 margin-bottom: 20rem;
             }
-            #mapML-container { 
+            #mapml-container { 
                 height: 44em;
                 background-image: url(images/earth.gif);
                 background-repeat: no-repeat;
@@ -25,6 +25,15 @@ and open the template in the editor.
                 background-size: 85em;
                 border: 1px solid black;
                 z-index:0;
+            }
+            mapml-viewer {
+                width: 100%;
+                height: 44em;
+                max-width: 100%;
+                min-width: 100%;
+            }
+            mapml-viewer > * {
+                display: none!important;
             }
             #loadingMessage{
                 text-align: center;
@@ -146,6 +155,13 @@ and open the template in the editor.
                 margin-bottom: 1em;
                 padding: 0px;
             }
+            .generic_point {
+                fill-opacity: 0.7;
+                stroke-width: 2;
+                stroke: blue;
+                stroke-opacity: 1;
+                stroke-dasharray: 3;
+            }
            
         </style>
     </head>
@@ -171,8 +187,8 @@ and open the template in the editor.
             </p>
             <div id="mapml-container">
                 <div id="loadingMessage" style="text-align: center;">Gathering Resource Data From Around The World...</div>
-                <mapml-viewer projection="CBMTILE" zoom="1" lat="12" lon="12" controls>
-                    <layer- src="https://geogratis.gc.ca/mapml/en/osmtile/osm/" label="OpenStreetMap" checked></layer->
+                <mapml-viewer id="mapml-view" projection="OSMTILE" zoom="2" lat="0.0" lon="0.0" controls>
+                    <layer- label="OSM Layer" src="https://geogratis.gc.ca/mapml/en/osmtile/osm/" checked="checked"></layer->
                 </mapml-viewer>
             </div>
 <!--            <div class="col">
@@ -180,7 +196,7 @@ and open the template in the editor.
                     <input id="tog" title="Remove all assertions that do not target IIIF resources." type="button" class="tag is-small color6" value="IIIF Assertions Only" app="isIIIF" onclick="GEOLOCATOR.filterMarkers(event)" />
                 </div>
             </div>-->
-<!--            <div class="card">
+            <div class="card">
                 <header>Supply a latitude and longitude to fly to.  Last Supplied Coordinates <span id="currentCoords">[12,12]</span></header>
                 <div class="card_body">
                     <div class="grouped">
@@ -191,7 +207,7 @@ and open the template in the editor.
                 <footer>
                     <input id='goToCoords' value="Go To Coordinates" type="button" class="tag is-small" onclick="GEOLOCATOR.goToCoords(event)"/>
                 </footer>
-            </div>-->
+            </div>
         </div>
         <footer class="nav nav-center text-primary is-fixed is-full-width, is-vertical-align">
             <a target="_blank" href="https://blog.ongcdh.org/blog/"><small>&copy;2020 Walter J. Ong, S.J. Center for Digital Humanities</small></a>

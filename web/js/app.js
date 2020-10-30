@@ -57,6 +57,7 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
                 let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
                 let webAnnoBodyType = ""
                 if(webAnnoType === "Annotation"){
+                    //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
                     webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
                     if(webAnnoBodyType){
                         if(typeof webAnnoBodyType === "string"){
@@ -96,6 +97,7 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
                             let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
                             let webAnnoBodyType = ""
                             if(webAnnoType === "Annotation"){
+                                //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
                                 webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
                                 if(webAnnoBodyType){
                                     if(typeof webAnnoBodyType === "string"){
@@ -180,7 +182,7 @@ GEOLOCATOR.init =  async function(view){
         .then(response => response.json())
         .then(geoMarkers => {
             return geoMarkers.map(anno => {
-               //We assume the application that created these coordinates did not apply properties.  
+               //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
                if(!anno.body.hasOwnProperty("properties")){
                    anno.body.properties = {}
                }
@@ -199,6 +201,8 @@ GEOLOCATOR.init =  async function(view){
     }
     formattedWebAnnotationGeoJSON = formattedWebAnnotationGeoJSON.flat(1) //AnnotationPages and FeatureCollections cause arrays in arrays.  
     let allGeos = await formattedWebAnnotationGeoJSON.map(async function(geoJSON){ 
+        //Format the properties so we don't end up with NULLS and BLANKS
+        //We resolve the targets live time to look for label and description.  They are not stored in the GeoJSON.
         let targetObjDescription = "No English description provided.  See targeted resource for more details."
         let targetObjLabel = "No English label provided.  See targeted resource for more details."
         let isIIIF = false
@@ -266,19 +270,25 @@ GEOLOCATOR.init =  async function(view){
         break
         
         case "mapML":
-        break
             GEOLOCATOR.initializeMapML(latlong, geoAssertions)
+        break
+            
         default:
             alert("boooooo")
     }
 }
 
+/**
+ * Generate a MapML instance dynamically.  We don't know any coordinates until the application or user gives them to us.
+ * @param {type} coords
+ * @param {type} geoMarkers
+ * @return {undefined}
+ */
 GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
-    GEOLOCATOR.mymap = document.getElementById('mapML-container')   
+    GEOLOCATOR.mymap = document.getElementById('mapml-view')
     GEOLOCATOR.mymap.setAttribute("lat", coords[0])
     GEOLOCATOR.mymap.setAttribute("long", coords[1])
-    GEOLOCATOR.mymap.setAttribute("zoom", 1)
-    let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked="">`
+    let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked=""><extent units="WGS84"></extent>`
     let mapML_features = geoMarkers.map(geojson_feature => {
         //We need each of these to be a <feature>.  Right now, they are GeoJSON-LD
         let feature_creator = geojson_feature.properties.creator
@@ -288,7 +298,6 @@ GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
         let feature_describes = geojson_feature.properties.targetID
         let feature_lat = geojson_feature.geometry.coordinates[0]
         let feature_long = geojson_feature.geometry.coordinates[1]
-        let feature_type = "point"
         
         let geometry = `<geometry><point><coordinates>${feature_lat} ${feature_long}</coordinates></point></geometry>`
         let properties = 
@@ -298,11 +307,11 @@ GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
             <p>Entity ${feature_describes}</p>
             <p>Annotation ${feature_web_URI}</p>
         </propeties>`
-        let feature = `<feature>${properties}${geometry}</feature>`
+        let feature = `<feature class="generic_point">${properties}${geometry}</feature>`
         return feature
      })
     feature_layer += `${mapML_features}</layer->` 
-    GEOLOCATOR.mymap.style.backgroundImage = "none"
+    document.getElementById('mapml-container').style.backgroundImage = "none"
     loadingMessage.classList.add("is-hidden")
     //Add the features to the mapml-viewer dynamically
     GEOLOCATOR.mymap.innerHTML += feature_layer
