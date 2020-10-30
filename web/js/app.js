@@ -303,9 +303,9 @@ GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
         let properties = 
         `<properties>
             <p>Label: ${feature_label}</p>
-            <p>Description ${feature_description}</p>
-            <p>Entity ${feature_describes}</p>
-            <p>Annotation ${feature_web_URI}</p>
+            <p>Description: ${feature_description}</p>
+            <p><a src="${feature_describes}">See Web Resource</a></p>
+            <p><a src="${feature_web_URI}">See Web Annotation</a></p>
         </propeties>`
         let feature = `<feature class="generic_point">${properties}${geometry}</feature>`
         return feature
