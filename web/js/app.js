@@ -288,7 +288,7 @@ GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
     GEOLOCATOR.mymap = document.getElementById('mapml-view')
     GEOLOCATOR.mymap.setAttribute("lat", coords[0])
     GEOLOCATOR.mymap.setAttribute("long", coords[1])
-    let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked=""><extent units="WGS84"></extent>`
+    let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked="checked"><extent units="WGS84"></extent>`
     let mapML_features = geoMarkers.map(geojson_feature => {
         //We need each of these to be a <feature>.  Right now, they are GeoJSON-LD
         let feature_creator = geojson_feature.properties.creator
@@ -304,8 +304,8 @@ GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
         `<properties>
             <p>Label: ${feature_label}</p>
             <p>Description: ${feature_description}</p>
-            <p>Web Resource: ${feature_describes}</p>
-            <p>Web Annotation: ${feature_web_URI}</p>
+            <p><a target="_blank" href="${feature_describes}">Web Resource</a></p>
+            <p><a target="_blank" href="${feature_web_URI}">Web Annotation</a></p>
         </propeties>`
         let feature = `<feature class="generic_point">${properties}${geometry}</feature>`
         return feature
