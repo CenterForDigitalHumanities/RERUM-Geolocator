@@ -57,6 +57,7 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
                 let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
                 let webAnnoBodyType = ""
                 if(webAnnoType === "Annotation"){
+                    //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
                     webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
                     if(webAnnoBodyType){
                         if(typeof webAnnoBodyType === "string"){
@@ -96,6 +97,7 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
                             let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
                             let webAnnoBodyType = ""
                             if(webAnnoType === "Annotation"){
+                                //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
                                 webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
                                 if(webAnnoBodyType){
                                     if(typeof webAnnoBodyType === "string"){
@@ -145,7 +147,7 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
     }
 }
 
-GEOLOCATOR.init =  async function(){
+GEOLOCATOR.init =  async function(view){
     let latlong = [12, 12] //default starting coords
     let historyWildcard = {"$exists":true, "$size":0}
     let geoWildcard = {"$exists":true}
@@ -180,7 +182,7 @@ GEOLOCATOR.init =  async function(){
         .then(response => response.json())
         .then(geoMarkers => {
             return geoMarkers.map(anno => {
-               //We assume the application that created these coordinates did not apply properties.  
+               //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
                if(!anno.body.hasOwnProperty("properties")){
                    anno.body.properties = {}
                }
@@ -199,6 +201,8 @@ GEOLOCATOR.init =  async function(){
     }
     formattedWebAnnotationGeoJSON = formattedWebAnnotationGeoJSON.flat(1) //AnnotationPages and FeatureCollections cause arrays in arrays.  
     let allGeos = await formattedWebAnnotationGeoJSON.map(async function(geoJSON){ 
+        //Format the properties so we don't end up with NULLS and BLANKS
+        //We resolve the targets live time to look for label and description.  They are not stored in the GeoJSON.
         let targetObjDescription = "No English description provided.  See targeted resource for more details."
         let targetObjLabel = "No English label provided.  See targeted resource for more details."
         let isIIIF = false
@@ -260,10 +264,60 @@ GEOLOCATOR.init =  async function(){
         return {"properties":targetProps, "type":"Feature", "geometry":geoJSON.geometry} 
     })
     let geoAssertions = await Promise.all(allGeos).then(assertions => {return assertions}).catch(err => {return []})    
-    GEOLOCATOR.initializeMap(latlong, geoAssertions)
+    switch(view){
+        case "leaflet":
+            GEOLOCATOR.initializeLeaflet(latlong, geoAssertions)
+        break
+        
+        case "mapML":
+            GEOLOCATOR.initializeMapML(latlong, geoAssertions)
+        break
+            
+        default:
+            alert("boooooo")
+    }
+}
+
+/**
+ * Generate a MapML instance dynamically.  We don't know any coordinates until the application or user gives them to us.
+ * @param {type} coords
+ * @param {type} geoMarkers
+ * @return {undefined}
+ */
+GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
+    GEOLOCATOR.mymap = document.getElementById('mapml-view')
+    GEOLOCATOR.mymap.setAttribute("lat", coords[0])
+    GEOLOCATOR.mymap.setAttribute("long", coords[1])
+    let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked="checked"><extent units="WGS84"></extent>`
+    let mapML_features = geoMarkers.map(geojson_feature => {
+        //We need each of these to be a <feature>.  Right now, they are GeoJSON-LD
+        let feature_creator = geojson_feature.properties.creator
+        let feature_web_URI = geojson_feature.properties.annoID
+        let feature_label = geojson_feature.properties.label
+        let feature_description = geojson_feature.properties.description
+        let feature_describes = geojson_feature.properties.targetID
+        let feature_lat = geojson_feature.geometry.coordinates[0]
+        let feature_long = geojson_feature.geometry.coordinates[1]
+        
+        let geometry = `<geometry><point><coordinates>${feature_lat} ${feature_long}</coordinates></point></geometry>`
+        let properties = 
+        `<properties>
+            <p>Label: ${feature_label}</p>
+            <p>Description: ${feature_description}</p>
+            <p><a target="_blank" href="${feature_describes}">Web Resource</a></p>
+            <p><a target="_blank" href="${feature_web_URI}">Web Annotation</a></p>
+        </propeties>`
+        let feature = `<feature class="generic_point">${properties}${geometry}</feature>`
+        return feature
+     })
+    feature_layer += `${mapML_features}</layer->` 
+    document.getElementById('mapml-container').style.backgroundImage = "none"
+    loadingMessage.classList.add("is-hidden")
+    //Add the features to the mapml-viewer dynamically
+    GEOLOCATOR.mymap.innerHTML += feature_layer
 }
     
-GEOLOCATOR.initializeMap = async function(coords, geoMarkers){
+GEOLOCATOR.initializeLeaflet = async function(coords, geoMarkers){
     GEOLOCATOR.mymap = L.map('leafletInstanceContainer')   
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoidGhlaGFiZXMiLCJhIjoiY2pyaTdmNGUzMzQwdDQzcGRwd21ieHF3NCJ9.SSflgKbI8tLQOo2DuzEgRQ', {
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
@@ -432,7 +486,7 @@ GEOLOCATOR.submitAnno = async function(event, app){
 }
 
 GEOLOCATOR.annoSaveCompletedEvent =function(createdObj){
-    createAnnoBtn.setAttribute("onclick", "document.location.href='viewAnnotations.html'")
+    createAnnoBtn.setAttribute("onclick", "document.location.href='leaflet-view.html'")
     createAnnoBtn.value="See It In Leaflet."
     
 }
