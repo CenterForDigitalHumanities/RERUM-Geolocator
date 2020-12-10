@@ -1,7 +1,8 @@
 /* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * RERUM Geolocator Application Script
+ * @author Bryan Haberberger
+ * 
+ * 
  */
 
 
@@ -19,6 +20,11 @@ GEOLOCATOR.URLS = {
     OVERWRITE: "overwrite"
 }
 
+/**
+ * Given the URI of a IIIF Presentation API 3.0 Manifest, resolve it and draw the GeoJSON-LD Web Annotations within.
+ * @param {type} manifestURL URI of the web resource to render and consume.
+ * @return {Array}
+ */
 GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
     let r = []
     let manifestObj = await fetch(manifestURL)
@@ -147,6 +153,12 @@ GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
     }
 }
 
+/**
+ * Initialize the application by gathering all GeoJSON-LD Web Annotations from RERUM and 
+ * formatting them appropriately for the given open source Web map.  Leaflet and MapML are supported.
+ * @param {type} view
+ * @return {undefined}
+ */
 GEOLOCATOR.init =  async function(view){
     let latlong = [12, 12] //default starting coords
     let historyWildcard = {"$exists":true, "$size":0}
@@ -201,8 +213,8 @@ GEOLOCATOR.init =  async function(view){
     }
     formattedWebAnnotationGeoJSON = formattedWebAnnotationGeoJSON.flat(1) //AnnotationPages and FeatureCollections cause arrays in arrays.  
     let allGeos = await formattedWebAnnotationGeoJSON.map(async function(geoJSON){ 
-        //Format the properties so we don't end up with NULLS and BLANKS
-        //We resolve the targets live time to look for label and description.  They are not stored in the GeoJSON.
+        //Avoid NULLS and blanks in the UI
+        
         let targetObjDescription = "No English description provided.  See targeted resource for more details."
         let targetObjLabel = "No English label provided.  See targeted resource for more details."
         let isIIIF = false
@@ -217,6 +229,8 @@ GEOLOCATOR.init =  async function(view){
             console.error(err)
             return null
         })
+        //We resolve the targets live time to look for label and description.  They are not stored in the GeoJSON.
+        //There are multiple standards friendly ways to supply description and label.  IIIF Presentation API 2.1 and 3.0 formats are supported. 
         if(targetObj){
             isIIIF = GEOLOCATOR.checkForIIIF(targetObj)
             //v3 first
@@ -263,18 +277,19 @@ GEOLOCATOR.init =  async function(view){
         } 
         return {"properties":targetProps, "type":"Feature", "geometry":geoJSON.geometry} 
     })
+    //After we have all the Annotations from RERUM and all the targets in those Annotations have been resolved for information...
     let geoAssertions = await Promise.all(allGeos).then(assertions => {return assertions}).catch(err => {return []})    
     switch(view){
         case "leaflet":
+            //Put GeoJSON into a Leaflet instance
             GEOLOCATOR.initializeLeaflet(latlong, geoAssertions)
         break
-        
         case "mapML":
+            //Put GeoJSON into a MapML instance
             GEOLOCATOR.initializeMapML(latlong, geoAssertions)
         break
-            
         default:
-            alert("boooooo")
+            alert("The only supported open source mapping UIs are Leaflet and MapML.")
     }
 }
 
@@ -374,52 +389,69 @@ GEOLOCATOR.pointEachFeature = function (feature, layer) {
     layer.bindPopup(popupContent);
 }
 
-GEOLOCATOR.goToCoords = function(event){
+GEOLOCATOR.goToCoords = function(event, view){
     if(leafLat.value && leafLong.value){
         let coords = [leafLat.value, leafLong.value]
-        GEOLOCATOR.mymap.flyTo(coords,8)
+        switch(view){
+            case "leaflet":
+                GEOLOCATOR.mymap.flyTo(coords,8)
+            break
+            case "mapML":
+
+            break
+            default:
+        }
         document.getElementById("currentCoords").innerHTML = "["+coords.toString()+"]"
         window.scrollTo(0, leafletInstanceContainer.offsetTop - 5)
     }
 }
 
-GEOLOCATOR.filterMarkers = async function(event){
+GEOLOCATOR.filterMarkers = async function(event, view){
     let app = event.target.getAttribute("app")
-    GEOLOCATOR.mymap.eachLayer(function(layer) {
-        if ( layer.hasMyPoints ) {
-            if(app === "isIIIF"){
-                if(layer.feature.properties.isIIIF){
-                    //Then it is for sure showing and we want it to stay showing
-                }
-                else{
-                    //It is a node we want to toggle
-                    if(layer.isHiding){
-                        tog.setAttribute("title","Remove all assertions that do not target IIIF resources.")
-                        tog.value="IIIF Assertions Only"
-                        layer.isHiding = false
-                        layer.setRadius(8)
-                        layer.getPopup().addEventListener("click")
-                        let appColor = "#08c49c"
-                        layer.setStyle({
-                            color: "#000",
-                            fillColor : appColor
-                        })
+    switch(view){
+        case "leaflet":
+            GEOLOCATOR.mymap.eachLayer(function(layer) {
+                if ( layer.hasMyPoints ) {
+                    if(app === "isIIIF"){
+                        if(layer.feature.properties.isIIIF){
+                            //Then it is for sure showing and we want it to stay showing
+                        }
+                        else{
+                            //It is a node we want to toggle
+                            if(layer.isHiding){
+                                tog.setAttribute("title","Remove all assertions that do not target IIIF resources.")
+                                tog.value="IIIF Assertions Only"
+                                layer.isHiding = false
+                                layer.setRadius(8)
+                                layer.getPopup().addEventListener("click")
+                                let appColor = "#08c49c"
+                                layer.setStyle({
+                                    color: "#000",
+                                    fillColor : appColor
+                                })
+                            }
+                            else{
+                                tog.setAttribute("title","See ALL assertions, even those that do not target IIIF resouces.")
+                                tog.value="All Assertions"
+                                layer.isHiding = true 
+                                layer.setRadius(0)
+                                layer.getPopup().removeEventListener("click")
+                                layer.setStyle({
+                                    color: 'rgba(0,0,0,0)',
+                                    fillColor : 'rgba(0,0,0,0)'
+                                })
+                            }
+                        }
                     }
-                    else{
-                        tog.setAttribute("title","See ALL assertions, even those that do not target IIIF resouces.")
-                        tog.value="All Assertions"
-                        layer.isHiding = true 
-                        layer.setRadius(0)
-                        layer.getPopup().removeEventListener("click")
-                        layer.setStyle({
-                            color: 'rgba(0,0,0,0)',
-                            fillColor : 'rgba(0,0,0,0)'
-                        })
-                    }
                 }
-            }
-        }
-    })
+            })
+        break
+        case "mapML":
+
+        break
+        default:
+    }
+
 }
                       
 
