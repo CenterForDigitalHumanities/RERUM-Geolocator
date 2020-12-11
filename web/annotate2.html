@@ -133,74 +133,6 @@ and open the template in the editor.
                     
                 </footer>
             </div>
-            <script>
-                /**
-                 * Generate a map for a user to select coordinates on.  Have it update and Lat and Long are provided.
-                 * @type type
-                 */
-                leafLat.oninput = updateGeometry
-                leafLong.oninput = updateGeometry
-                let mapView = document.getElementById("mapml-preview")
-                function updateGeometry(event, clickedLat, clickedLong) {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    let lat = clickedLat ? clickedLat : leafLat.value
-                    lat = parseInt(lat * 1000000) / 1000000
-                    let long =  clickedLong ? clickedLong : leafLong.value
-                    long= parseInt(long * 1000000) / 1000000
-                    if (lat && long) {
-                        //TODO programmatic setView
-                        document.getElementById("mapml-preview").zoomTo(lat, long, 16)
-//                        mapView.setAttribute("lat", lat)
-//                        mapView.setAttribute("lon", long)
-//                        mapView.setAttribute("zoom", 16)
-                    }
-                    leafLat.value = lat
-                    leafLong.value = long
-                }
-                //TODO click events on a MapML map.  Want a click to generate a popup with the option to use the coordinates at the click location.  
-                //It MUST be easier than this.
-                mapView.addEventListener('click', e => {
-                    e.preventDefault() //?
-                    if(e.detail && e.detail.hasOwnProperty("lat") && e.detail.hasOwnProperty("lon")){
-                        console.log("click on MapML at "+e.detail.lat+", "+e.detail.lon+".  See event for info.")
-                        console.log(e)
-                        if(document.getElementById("clickPopup")){
-                            document.getElementById("clickPopup").remove()
-                        }
-                        if(e.detail.lat && e.detail.lon){
-                            let popup = `<div id="clickPopup"> <div>${e.detail.lat}, ${e.detail.lon}<br><button class="tag is-small text-primary bd-primary" onclick="updateGeometry(event,${e.detail.lat},${e.detail.lon});">Use These</button></div> </div>`
-                            const shadow = document.getElementById("mapml-preview").shadowRoot
-                            const childNodes = Array.from(shadow.childNodes)
-                            childNodes.forEach(childNode => {
-                                if (childNode.nodeName === 'STYLE') {
-                                    childNode.textContent += `
-                                    #clickPopup{
-                                        height: 300px;
-                                        width: 300px;
-                                        top: ${e.detail.y}px;
-                                        left: ${e.detail.x}px;
-                                        position : absolute;
-                                        background-color: green;
-                                        z-index: 400;
-                                    }`
-                                }
-                                if (childNode.classList.contains("leaflet-container")) {
-                                  childNode.innerHTML += popup
-                                }
-                            });
-                        }
-                        else{
-                            console.error("Could not produce popup.  Event did not contain geographic coordinates.")
-                        }
-                    }
-                    else{
-                        console.log("Detected a click, a Default Mouse Event")
-                    }
-                    //L.popup().setLatLng(e.latlng).setContent(`<div>${e.latlng.toString()}<br><button class="tag is-small text-primary bd-primary" onclick="updateGeometry(event,${e.latlng.lat},${e.latlng.lng});">Use These</button></div>`).openOn(mapml-preview)
-                })
-            </script>
-
             <div id="createAnnotation" class="card is-hidden notfirst">
                 <header>
                     See your new Annotation and decide whether or not to save it.
@@ -222,12 +154,101 @@ and open the template in the editor.
         </footer>
     </body>
     <script>
-
-        /*
-         * Below are custom UI things for just this page functionality
+        
+        leafLat.oninput = updateGeometry
+        leafLong.oninput = updateGeometry
+        let mapView = document.getElementById("mapml-preview")
+        mapView.addEventListener('click', e => {
+            //e.preventDefault() //?
+            if(e.detail && e.detail.hasOwnProperty("lat") && e.detail.hasOwnProperty("lon")){
+                let popup = `<div id="clickPopup"> <div>${e.detail.lat}, ${e.detail.lon}<br><button class="tag is-small text-primary bd-primary" onclick="updateGeometry(event,${e.detail.lat},${e.detail.lon});">Use These</button></div> </div>`
+                openPopupOnMap(e, popup)
+            }
+            else{
+                console.log("Detected a click, a Default Mouse Event")
+            }
+        })
+        
+        function updateGeometry(event, clickedLat, clickedLong) {
+            event.preventDefault()
+            event.stopPropagation()
+            let lat = clickedLat ? clickedLat : leafLat.value
+            lat = parseInt(lat * 1000000) / 1000000
+            let long =  clickedLong ? clickedLong : leafLong.value
+            long= parseInt(long * 1000000) / 1000000
+            if (lat && long) {
+                //TODO programmatic setView
+                document.getElementById("mapml-preview").zoomTo(lat, long, 16)
+//                        mapView.setAttribute("lat", lat)
+//                        mapView.setAttribute("lon", long)
+//                        mapView.setAttribute("zoom", 16)
+            }
+            leafLat.value = lat
+            leafLong.value = long
+        }
+        
+        /**
+         * Click in a MapML instance, popup built by script.
+         * Is it easier than this?
+         * @param {type} mapML_instance_click_event
+         * @param {type} popup
+         * @returns {undefined}
          */
+        function openPopupOnMap(mapML_instance_click_event, popupElement){
+            let mapML_map = mapML_instance_click_event.target
+            const shadow = mapML_map.shadowRoot
+            const childNodes = Array.from(shadow.childNodes)
+            childNodes.forEach(childNode => {
+                if (childNode.nodeName === 'STYLE') {
+                    childNode.textContent += `
+                    #clickPopup{
+                        height: 100px;
+                        width: 200px;
+                        top: ${mapML_instance_click_event.detail.y}px;
+                        left: ${mapML_instance_click_event.detail.x}px;
+                        position : absolute;
+                        background-color: green;
+                        z-index: 400;
+                    }`
+                }
+                if (childNode.classList.contains("leaflet-container")) {
+                    if(childNode.closest("#clickPopup")){
+                        childNode.closest("#clickPopup").remove()
+                    }
+                    childNode.innerHTML += popupElement
+                }
+            })
+        }
         
-        
+        /**
+         * Click in a MapML instance, popup built by Leaflet
+         * @param {type} mapML_instance_click_event
+         * @param {type} popup
+         * @returns {undefined}
+         */
+        function addPopupOnMap(mapML_instance_click_event, popupElement){
+            let mapML_map = mapML_instance_click_event.target
+            const shadow = mapML_map.shadowRoot
+            const childNodes = Array.from(shadow.childNodes)
+            childNodes.forEach(childNode => {
+                if (childNode.nodeName === 'STYLE') {
+                    childNode.textContent += `
+                    #clickPopup{
+                        height: 100px;
+                        width: 200px;
+                        top: ${mapML_instance_click_event.detail.y}px;
+                        left: ${mapML_instance_click_event.detail.x}px;
+                        position : absolute;
+                        background-color: green;
+                        z-index: 400;
+                    }`
+                }
+                 if (childNode.classList.contains("leaflet-container")) {
+                    childNode.innerHTML += popupElement
+                }
+            })
+        }
+
         /**
          * Get a URI from the UI and check if it is resolvable.  Provide feedback
          */
