@@ -14,7 +14,7 @@ and open the template in the editor.
         <script src="js/app.js"></script>
         <style>
 
-            #mapml-preview {
+            #mapml-picker {
                 height: 48rem;
                 width: 98%;
                 z-index: 0;
@@ -124,7 +124,7 @@ and open the template in the editor.
                         <label>Longitude</label>
                         <input id="leafLong" step=".000000001" type="number"/>
                     </div>
-                    <mapml-viewer is="web-map" class="col" id="mapml-preview" projection="OSMTILE" zoom="2" lat="12" lon="12" controls>
+                    <mapml-viewer is="web-map" class="col" id="mapml-picker" projection="OSMTILE" zoom="2" lat="12" lon="12" controls>
                         <layer- label="OSM Layer" src="https://geogratis.gc.ca/mapml/en/osmtile/osm/" checked="checked"></layer->
                         <!--<extent units="WGS84"></extent>-->
                     </mapml-viewer>
@@ -157,38 +157,40 @@ and open the template in the editor.
         
         leafLat.oninput = updateGeometry
         leafLong.oninput = updateGeometry
-        let mapView = document.getElementById("mapml-preview")
+        let mapView = document.getElementById("mapml-picker")        
+        /**
+         * Catch a left click event and build a popup with the option to use the coordinates from the click.
+         * @param {type} event
+         * @returns {undefined}
+         */
         mapView.addEventListener('click', e => {
-            //e.preventDefault() //?
+            let map_for_L = mapView._map
             if(e.detail && e.detail.hasOwnProperty("lat") && e.detail.hasOwnProperty("lon")){
-                let popup = `<div id="clickPopup"> <div>${e.detail.lat}, ${e.detail.lon}<br><button class="tag is-small text-primary bd-primary" onclick="updateGeometry(event,${e.detail.lat},${e.detail.lon});">Use These</button></div> </div>`
-                openPopupOnMap(e, popup)
+                const content = 
+                    `<div>
+                        ${e.detail.lat}, ${e.detail.lon}<br>
+                        <button class="tag is-small text-primary bd-primary" onclick="updateGeometry(event,${e.detail.lat},${e.detail.lon});">Use These</button>
+                    </div>`
+                //We can leverage Leaflet because we know the L.map() map.  Not sure what MapML's version of doing this will be.
+                L.popup().setLatLng([e.detail.lat, e.detail.lon]).setContent(content).openOn(map_for_L)
+                /*
+                let popup = `
+                    <div id="clickPopup"> 
+                        <div>
+                            ${e.detail.lat}, ${e.detail.lon}<br>
+                            <button class="tag is-small text-primary bd-primary" onclick="updateGeometry(event,${e.detail.lat},${e.detail.lon});">Use These</button>
+                        </div> 
+                    </div>`
+                mapView.openPopupOnMap(e, popup)
+                */
             }
             else{
                 console.log("Detected a click, a Default Mouse Event")
             }
         })
         
-        function updateGeometry(event, clickedLat, clickedLong) {
-            event.preventDefault()
-            event.stopPropagation()
-            let lat = clickedLat ? clickedLat : leafLat.value
-            lat = parseInt(lat * 1000000) / 1000000
-            let long =  clickedLong ? clickedLong : leafLong.value
-            long= parseInt(long * 1000000) / 1000000
-            if (lat && long) {
-                //TODO programmatic setView
-                document.getElementById("mapml-preview").zoomTo(lat, long, 16)
-//                        mapView.setAttribute("lat", lat)
-//                        mapView.setAttribute("lon", long)
-//                        mapView.setAttribute("zoom", 16)
-            }
-            leafLat.value = lat
-            leafLong.value = long
-        }
-        
-        /**
-         * Click in a MapML instance, popup built by script.
+       /**
+         * Click in a MapML instance, popup built by script without using Leaflet.
          * Is it easier than this?
          * @param {type} mapML_instance_click_event
          * @param {type} popup
@@ -218,35 +220,19 @@ and open the template in the editor.
                     childNode.innerHTML += popupElement
                 }
             })
-        }
         
-        /**
-         * Click in a MapML instance, popup built by Leaflet
-         * @param {type} mapML_instance_click_event
-         * @param {type} popup
-         * @returns {undefined}
-         */
-        function addPopupOnMap(mapML_instance_click_event, popupElement){
-            let mapML_map = mapML_instance_click_event.target
-            const shadow = mapML_map.shadowRoot
-            const childNodes = Array.from(shadow.childNodes)
-            childNodes.forEach(childNode => {
-                if (childNode.nodeName === 'STYLE') {
-                    childNode.textContent += `
-                    #clickPopup{
-                        height: 100px;
-                        width: 200px;
-                        top: ${mapML_instance_click_event.detail.y}px;
-                        left: ${mapML_instance_click_event.detail.x}px;
-                        position : absolute;
-                        background-color: green;
-                        z-index: 400;
-                    }`
-                }
-                 if (childNode.classList.contains("leaflet-container")) {
-                    childNode.innerHTML += popupElement
-                }
-            })
+        function updateGeometry(event, clickedLat, clickedLong) {
+            event.preventDefault()
+            event.stopPropagation()
+            let lat = clickedLat ? clickedLat : leafLat.value
+            lat = parseInt(lat * 1000000) / 1000000
+            let long =  clickedLong ? clickedLong : leafLong.value
+            long= parseInt(long * 1000000) / 1000000
+            if (lat && long) {
+                mapView.zoomTo(lat, long, 16)
+            }
+            leafLat.value = lat
+            leafLong.value = long
         }
 
         /**
@@ -327,7 +313,7 @@ and open the template in the editor.
             coordinatesCard.classList.remove("is-hidden")
             coordinatesCard.style.top = "auto"
             coordinatesCard.style.position = "relative"
-            document.getElementById("mapml-preview").style.visibility = "visible"
+            mapView.style.visibility = "visible"
             window.scrollTo(0,coordinatesCard.offsetTop-50)
         }
         
