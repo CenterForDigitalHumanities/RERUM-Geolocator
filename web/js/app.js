@@ -313,7 +313,6 @@ GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
         let feature_describes = geojson_feature.properties.targetID
         let feature_lat = geojson_feature.geometry.coordinates[0]
         let feature_long = geojson_feature.geometry.coordinates[1]
-        
         let geometry = `<geometry><point><coordinates>${feature_lat} ${feature_long}</coordinates></point></geometry>`
         let properties = 
         `<properties>
@@ -321,10 +320,11 @@ GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
             <p>Description: ${feature_description}</p>
             <p><a target="_blank" href="${feature_describes}">Web Resource</a></p>
             <p><a target="_blank" href="${feature_web_URI}">Web Annotation</a></p>
-        </propeties>`
-        let feature = `<feature class="generic_point">${properties}${geometry}</feature>`
+        </properties>`
+        let feature = `<feature class="generic_point">${properties} ${geometry}</feature>`
         return feature
-     })
+    })
+    mapML_features = mapML_features.join(" ")
     feature_layer += `${mapML_features}</layer->` 
     document.getElementById('mapml-container').style.backgroundImage = "none"
     loadingMessage.classList.add("is-hidden")
