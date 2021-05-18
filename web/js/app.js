@@ -173,9 +173,14 @@ GEOLOCATOR.init =  async function(view){
         "creator" : "geolocating@rerum.io"
     }
     let formattedWebAnnotationGeoJSON = []
-    let manifestInURL = GEOLOCATOR.getURLVariable("manifest")
-    if(manifestInURL){
-        formattedWebAnnotationGeoJSON = await GEOLOCATOR.consumeManifestForGeoJSON(manifestInURL)
+    //Maybe want to do specific warnings around 'iiif-content' so separate support
+    let IIIFdataInURL = GEOLOCATOR.getURLVariable("iiif-content")
+    let dataInURL = IIIFdataInURL
+    if(!IIIFdataInURL){
+        dataInURL = GEOLOCATOR.getURLVariable("data-uri")
+    }
+    if(dataInURL){
+        formattedWebAnnotationGeoJSON = await GEOLOCATOR.consumeForGeoJSON(dataInURL)
         .then(geoMarkers => {return geoMarkers})
         .catch(err => {
             console.error(err)
@@ -195,7 +200,10 @@ GEOLOCATOR.init =  async function(view){
         .then(geoMarkers => {
             return geoMarkers.map(anno => {
                //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
+               //OR the annotation.body.properties should take preference and only add in NEW properties...
+               let original_properties = {}
                if(!anno.body.hasOwnProperty("properties")){
+                   original_properties = anno.body.properties
                    anno.body.properties = {}
                }
                if(anno.hasOwnProperty("creator")){
@@ -212,28 +220,65 @@ GEOLOCATOR.init =  async function(view){
         })
     }
     formattedWebAnnotationGeoJSON = formattedWebAnnotationGeoJSON.flat(1) //AnnotationPages and FeatureCollections cause arrays in arrays.  
+    // Now loop all the Annotations and just keep the anno.body, which is the GeoJSON for the web map.
     let allGeos = await formattedWebAnnotationGeoJSON.map(async function(geoJSON){ 
         //Avoid NULLS and blanks in the UI
-        
         let targetObjDescription = "No English description provided.  See targeted resource for more details."
         let targetObjLabel = "No English label provided.  See targeted resource for more details."
+        let description = ""
+        let label = ""
+        if(geoJSON.properties.hasOwnProperty("summary")){
+            if(typeof geoJSON.properties.summary === "string"){
+                description = geoJSON.properties.summary
+            }
+            else{
+                if(geoJSON.properties.summary.hasOwnProperty("en")){
+                    description = geoJSON.properties.summary.en[0] ? geoJSON.properties.summary.en[0] : "No English description provided.  See targeted resource for more details."
+                }
+                else{
+                    description = "No English description provided.  See targeted resource for more details."
+                }
+            }
+        }
+        if(geoJSON.properties.hasOwnProperty("label")){
+            if(typeof geoJSON.properties.label === "string"){
+                label = geoJSON.properties.label
+            }
+            else{
+                if(geoJSON.properties.label.hasOwnProperty("en")){
+                    label = geoJSON.properties.label.en[0] ? geoJSON.properties.label.en[0] : "No English label provided.  See targeted resource for more details."
+                }
+                else{
+                    label = "No English label provided.  See targeted resource for more details."
+                }
+            }
+        }
         let isIIIF = false
         let targetURI = geoJSON.properties.targetID ? geoJSON.properties.targetID : "Error"
         let annoID = geoJSON.properties.annoID ? geoJSON.properties.annoID : "Unknown"
         let creator = geoJSON.properties.annoCreator ? geoJSON.properties.annoCreator : "geolocating@rerum.io"
-        let targetProps = {"annoID":annoID, "label":targetObjLabel,"description":targetObjDescription, "creator": creator, "isIIIF":isIIIF}
-        targetProps.targetID = targetURI
+        //We are generating these properties dynamically because they may have not been stored in GeoJSON.properties correctly or at all.
+        let formattedProps = {"annoID":annoID, "targetID":targetURI, "label":label,"description":description, "creator": creator, "isIIIF":isIIIF}
+        geoJSON.properties = formattedProps
+        /**
+         * Everything below is to support metadata.  Typically, a web map UI shows key \n value for free.  
+         * For these Web Annotations, we want to show the label and description/summary from the target, which is why we do this.
+         * We have to format things, like language maps, into something the web map will understand (basic key:string || num).
+         * In the end, we could just say "we only support what is in the GeoJSON.properties already, which is what you should be doing".
+         * Instead, here we attempt to resolve the target and take its label and description if it did not have one already.  
+         */
+        //We resolve the targets live time to look for metadata that was not in GeoJSON.properties.
         let targetObj = await fetch(targetURI)
         .then(resp => resp.json())
         .catch(err => {
             console.error(err)
             return null
         })
-        //We resolve the targets live time to look for label and description.  They are not stored in the GeoJSON.
-        //There are multiple standards friendly ways to supply description and label.  IIIF Presentation API 2.1 and 3.0 formats are supported. 
+       
         if(targetObj){
             isIIIF = GEOLOCATOR.checkForIIIF(targetObj)
-            //v3 first
+            formattedProps.isIIIF = isIIIF
+            //v3 summary
             if(targetObj.hasOwnProperty("summary")){
                 if(typeof targetObj.summary === "string"){
                     targetObjDescription = targetObj.summary
@@ -247,11 +292,13 @@ GEOLOCATOR.init =  async function(view){
                     }
                 }
             }
+            //v2 description
             if(targetObjDescription === "No English description provided.  See targeted resource for more details."){
                 if(targetObj.hasOwnProperty("description") && typeof targetObj.description === "string"){
                     targetObjDescription = targetObj.description ? targetObj.description : "No English description provided.  See targeted resource for more details."
                 }
             }
+            //v3 label
             if(targetObj.hasOwnProperty("label")){
                 if(typeof targetObj.label === "string"){
                     targetObjLabel = targetObj.label
@@ -265,17 +312,25 @@ GEOLOCATOR.init =  async function(view){
                     }
                 }
             }
+            //v2 label
             if(targetObjLabel=== "No English label provided.  See targeted resource for more details."){
                 if(targetObj.hasOwnProperty("name") && typeof targetObj.name === "string"){
                     targetObjLabel = targetObj.name ? targetObj.name : "No English label provided.  See targeted resource for more details."
                 }
             }
-            targetProps = {"annoID":annoID, "targetID":targetURI, "label":targetObjLabel, "description":targetObjDescription, "creator":creator, "isIIIF":isIIIF}
+            //defaulting behavior, avoid NULLs and BLANKs for UIs sake
+            if(formattedProps.label === "No English label provided.  See targeted resource for more details."){
+                formattedProps.label = targetObjLabel
+            }
+            if(formattedProps.description === "No English description provided.  See targeted resource for more details."){
+                formattedProps.description = targetObjDescription
+            }
+            geoJSON.properties = formattedProps
         }
         else{
             //This geo assertion is not well defined because its target is not well defined or unresolvable.
         } 
-        return {"properties":targetProps, "type":"Feature", "geometry":geoJSON.geometry} 
+        return geoJSON
     })
     //After we have all the Annotations from RERUM and all the targets in those Annotations have been resolved for information...
     let geoAssertions = await Promise.all(allGeos).then(assertions => {return assertions}).catch(err => {return []})    
