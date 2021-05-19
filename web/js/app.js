@@ -62,8 +62,6 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
             return r
         }
         let hasNavPlace = false;
-        let manifestGeoJson = []
-        let canvasesGeoJSON = []
         if(resourceType === "Manifest"){
             //TODO Check for navPlace on the Manifest and each Canvas in the Manifest
             let manifestGeo = {}
@@ -77,21 +75,28 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
             }).map(canvas => {
                 return canvas.navPlace
             })
+            if(geos.length){
+                hasNavPlace = true
+            }
             geos.append(manifestGeo)
             r = geos
             return r
         }
         else if(resourceType === "Canvas"){
-            //TODO check for navPlace on the Canvas
             if(dataObj.hasOwnProperty("navPlace")){
+                hasNavPlace = true
                 r = [dataObj.navPlace]
                 return r
             }
+        }
+        if(r.length === 0 ){
+            console.warning("navPlace was not used in the web resource nor its child items.")
         }
         /**
          * If the object does not have navPlace, then it may have annotations on it.  Check for GeoJSON there.  
          * Note that instead of preferencing, we could just consume both.  That is not the use case here though.
          * If navPlace exists, then we don't check for Annotations.  
+         * Note that the hasNavPlace variable will let you know if we found any instance of navPlace, which you can switch on. 
          */
         if(dataObj.hasOwnProperty("annotations") && dataObj.annotations.length){
             let annoGeos = dataObj.annotations.map(webAnno => {
@@ -180,15 +185,18 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
             })
             //If you don't return r in the navPlace checks, it will make it to here and combine the navPlace geos and the annotation geos
             r = [...r, ...annoGeos]
+            if(annoGeos.length === 0){
+                console.warning("There was no GeoJSON found in the Annotations on this web resource.")
+            }
             return r
         }
         else{
-            alert("There were annotations found on this Manifest.  Nothing to draw.")
+            console.warning("There were no annotations found on this web resource.")
             return r
         }
     }
     else{
-        alert("There was an error getting the manifest from web.  Please check the URL in a separate tab.")
+        console.error("URI did not resolve and so was not dereferencable.  There is no data.")
         return r
     }
 }
