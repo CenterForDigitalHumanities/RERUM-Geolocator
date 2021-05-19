@@ -267,6 +267,7 @@ GEOLOCATOR.init =  async function(view){
         })
     }
     let formattedGeoJsonData = geoJsonData.flat(1) //AnnotationPages and FeatureCollections cause arrays in arrays.  
+    //We have good GeoJSON.  Now we need to make sure label/name and description/summary inside of GeoJSON.properties is formatted correctly.
     let allGeos = await formattedGeoJsonData.map(async function(geoJSON){ 
         //Avoid NULLS and blanks in the UI
         let targetObjDescription = "No English description provided.  See targeted resource for more details."
@@ -384,13 +385,12 @@ GEOLOCATOR.init =  async function(view){
                 }
             }
             //defaulting behavior, avoid NULLs and BLANKs for UIs sake. targetObjLabel and targetObjDescription are strings.
-            
             if(formattedProps.label === "No English label provided.  See targeted resource for more details."){
-                //Then we don't have a label in the GeoJSON.properties.  Use the formatted label from the target.
+                //Then we don't have a label in the GeoJSON.properties.  Use the formatted label from the target, which may also just be this string.
                 formattedProps.label = targetObjLabel
             }
             if(formattedProps.description === "No English description provided.  See targeted resource for more details."){
-                //Then we don't have a description in the GeoJSON.properties.  Use the formatted description from the target.
+                //Then we don't have a description in the GeoJSON.properties.  Use the formatted description from the target, which may also just be this string.
                 formattedProps.description = targetObjDescription
             }
             geoJSON.properties = formattedProps
