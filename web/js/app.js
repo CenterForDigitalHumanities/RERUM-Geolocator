@@ -21,45 +21,58 @@ GEOLOCATOR.URLS = {
 }
 
 /**
- * Given the URI of a IIIF Presentation API 3.0 Manifest, resolve it and draw the GeoJSON-LD Web Annotations within.
- * @param {type} manifestURL URI of the web resource to render and consume.
+ * Given the URI of a web resource, resolve it and draw the GeoJSON-LD within.
+ * @param {type} URI of the web resource to dereference and consume.
  * @return {Array}
  */
-GEOLOCATOR.consumeManifestForGeoJSON = async function(manifestURL){
+GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
     let r = []
-    let manifestObj = await fetch(manifestURL)
+    let dataObj = await fetch(dataURL)
         .then(resp => resp.json())
         .then(man => {return man})
         .catch(err => {return null})
    
-    if(manifestObj){
-        let manifestResourceType = manifestObj.type ? manifestObj.type : manifestObj["@type"] ? manifestObj["@type"] : ""
-        if(manifestResourceType !== "Manifest"){
-            alert("The data resource must be a IIIF Presentation API 3 'Manifest' resource types.  Please check the type.")
+    if(dataObj){
+        let resourceType = dataObj.type ? dataObj.type : dataObj["@type"] ? dataObj["@type"] : ""
+        /**
+         * Baked in support for IIIF Presentation API 3 resource types
+         */
+        if(resourceType !== "Manifest" && resourceType !== "Canvas"){
+            alert("The data resource must be a IIIF Presentation API 3 'Manifest' or 'Canvas' resource type.  Please check the type.")
             return r
         }
-        if (manifestObj.hasOwnProperty("@context")){
-            if(typeof manifestObj["@context"] === "string" && manifestObj["@context"] !== "http://iiif.io/api/presentation/3/context.json"){
+        if (dataObj.hasOwnProperty("@context")){
+            if(typeof dataObj["@context"] === "string" && dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json"){
                 alert("This will only consume IIIF Presentation API 3 Manifest resources.")
                 return r
             }
-            else if (Array.isArray(manifestObj["@context"]) && manifestObj["@context"].length > 0){
-                if(!manifestObj["@context"].includes("http://iiif.io/api/presentation/3/context.json")){
+            else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
+                if(!dataObj["@context"].includes("http://iiif.io/api/presentation/3/context.json")){
                     alert("This will only consume IIIF Presentation API 3 Manifest resources.")
                     return r
                 }
             }
-            else if(typeof manifestObj["@context"] === "object"){
+            else if(typeof dataObj["@context"] === "object"){
                 alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 context.  This will only consume IIIF Presentation API 3 Manifest resources.")
                 return r
             }
         }
         else{
-            alert("This will only consume IIIF Presentation API 3 Manifest resources.  A context (@context) must be present on the resource.")
+            alert("This will only consume IIIF Presentation API 3 Manifest and Canvas resources.  A context (@context) must be present on the resource.")
             return r
         }
-        if(manifestObj.hasOwnProperty("annotations") && manifestObj.annotations.length){
-            return manifestObj.annotations.map(webAnno => {
+        //TODO navPlace check ahead of annotations check
+        let hasNavPlace = false;
+        if(resourceType === "Manifest"){
+            //Check for navPlace on the Manifest and each Canvas in the Manifest
+            hasNavPlace = true
+        }
+        else if(resourceType === "Canvas"){
+            //check for navPlace
+            hasNavPlace = true
+        }
+        if(!hasNavPlace && dataObj.hasOwnProperty("annotations") && dataObj.annotations.length){
+            return dataObj.annotations.map(webAnno => {
                 let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
                 let webAnnoBodyType = ""
                 if(webAnnoType === "Annotation"){
