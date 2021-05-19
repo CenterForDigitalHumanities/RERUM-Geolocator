@@ -36,6 +36,8 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
         let resourceType = dataObj.type ? dataObj.type : dataObj["@type"] ? dataObj["@type"] : ""
         /**
          * Baked in support for IIIF Presentation API 3 resource types
+         * Note that this demo imagines supporting other resource types besides those listed in the IIIF Presentation 3 API.  TODO.
+         * For now, it will alert users about their web resource before processing anything.  If it isn't a supported type, we don't even try.  FIXME
          */
         if(resourceType !== "Manifest" && resourceType !== "Canvas"){
             alert("The data resource must be a IIIF Presentation API 3 'Manifest' or 'Canvas' resource type.  Please check the type.")
@@ -43,22 +45,22 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
         }
         if (dataObj.hasOwnProperty("@context")){
             if(typeof dataObj["@context"] === "string" && dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json"){
-                alert("This will only consume IIIF Presentation API 3 Manifest resources.")
+                alert("This will only consume IIIF Presentation API 3 'Manifest' and 'Canvas' resources.  Check the resource @context.")
                 return r
             }
             else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
                 if(!dataObj["@context"].includes("http://iiif.io/api/presentation/3/context.json")){
-                    alert("This will only consume IIIF Presentation API 3 Manifest resources.")
+                    alert("This will only consume IIIF Presentation API 3 'Manifest' and 'Canvas' resources.  Check the resource @context.")
                     return r
                 }
             }
             else if(typeof dataObj["@context"] === "object"){
-                alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 context.  This will only consume IIIF Presentation API 3 Manifest resources.")
+                alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 context.  This will only consume IIIF Presentation API 3 'Manifest' and 'Canvas' resources.")
                 return r
             }
         }
         else{
-            alert("This will only consume IIIF Presentation API 3 Manifest and Canvas resources.  A context (@context) must be present on the resource.")
+            alert("This will only consume IIIF Presentation API 3 'Manifest' and 'Canvas' resources.  A context (@context) must be present on the resource.")
             return r
         }
         let hasNavPlace = false;
