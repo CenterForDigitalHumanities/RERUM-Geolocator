@@ -273,6 +273,8 @@ GEOLOCATOR.init =  async function(view){
         let targetObjLabel = "No English label provided.  See targeted resource for more details."
         let description = ""
         let label = ""
+        //We are generating these properties dynamically because they may have not been stored in GeoJSON.properties correctly or at all.
+        //We have to format things, like language maps, into something the web map will understand (basic key:string || num).
         if(geoJSON.properties.hasOwnProperty("summary")){
             if(typeof geoJSON.properties.summary === "string"){
                 description = geoJSON.properties.summary
@@ -299,22 +301,38 @@ GEOLOCATOR.init =  async function(view){
                 }
             }
         }
+        else if(geoJSON.properties.hasOwnProperty("name")){
+            //Check for 'name' as an alternative to 'label'
+            if(typeof geoJSON.properties.name === "string"){
+                label = geoJSON.properties.name
+            }
+            else{
+                if(geoJSON.properties.name.hasOwnProperty("en")){
+                    label = geoJSON.properties.name.en[0] ? geoJSON.properties.name.en[0] : "No English label provided.  See targeted resource for more details."
+                }
+                else{
+                    label = "No English label provided.  See targeted resource for more details."
+                }
+            }
+        }
         let isIIIF = false
         let targetURI = geoJSON.properties.targetID ? geoJSON.properties.targetID : "Error"
         let annoID = geoJSON.properties.annoID ? geoJSON.properties.annoID : "Unknown"
         let creator = geoJSON.properties.annoCreator ? geoJSON.properties.annoCreator : "geolocating@rerum.io"
-        //We are generating these properties dynamically because they may have not been stored in GeoJSON.properties correctly or at all.
+        //Here we make our formatted props.  Values have to be (string || num), no arrays or objects.  They break web map UIs.
         let formattedProps = {"annoID":annoID, "targetID":targetURI, "label":label,"description":description, "creator": creator, "isIIIF":isIIIF}
         geoJSON.properties = formattedProps
         /**
-         * Everything below is to support metadata on the target object.  Typically, a web map UI shows key \n value for free.  
+         * Everything below is to support metadata from the target object.  Typically, a web map UI shows key \n value for free.  
          * We want to show the label and description/summary from the target, especially if they are not provided in GeoJSON.properties.
          * We have to format things, like language maps, into something the web map will understand (basic key:string || num).
          * In the end, we could just say "we only support what is in the GeoJSON.properties already, which is what you should be doing".
          * Instead, here we attempt to resolve the target and take its label and description if the GeoJSON did not have them already.  
          */
+        
         //We resolve the targets live time to look for metadata that was not in GeoJSON.properties.
-        //Note that we are doing this every time to support the isIIIF flag.  If we remove that, we can put this fetch behind conditionals.  
+        //Note that we are doing this every time to support the isIIIF flag.  If we remove that, we can put this fetch behind conditionals. 
+        //Maybe only do this if you don't already have a label and/or description from the GeoJSON properties.
         let targetObj = await fetch(targetURI)
         .then(resp => resp.json())
         .catch(err => {
@@ -365,11 +383,14 @@ GEOLOCATOR.init =  async function(view){
                     targetObjLabel = targetObj.name ? targetObj.name : "No English label provided.  See targeted resource for more details."
                 }
             }
-            //defaulting behavior, avoid NULLs and BLANKs for UIs sake
+            //defaulting behavior, avoid NULLs and BLANKs for UIs sake. targetObjLabel and targetObjDescription are strings.
+            
             if(formattedProps.label === "No English label provided.  See targeted resource for more details."){
+                //Then we don't have a label in the GeoJSON.properties.  Use the formatted label from the target.
                 formattedProps.label = targetObjLabel
             }
             if(formattedProps.description === "No English description provided.  See targeted resource for more details."){
+                //Then we don't have a description in the GeoJSON.properties.  Use the formatted description from the target.
                 formattedProps.description = targetObjDescription
             }
             geoJSON.properties = formattedProps
