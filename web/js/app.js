@@ -172,7 +172,7 @@ GEOLOCATOR.init =  async function(view){
         "__rerum.generatedBy"  : GEOLOCATOR.APPAGENT,
         "creator" : "geolocating@rerum.io"
     }
-    let formattedWebAnnotationGeoJSON = []
+    let geoJsonData = []
     //Maybe want to do specific warnings around 'iiif-content' so separate support
     let IIIFdataInURL = GEOLOCATOR.getURLVariable("iiif-content")
     let dataInURL = IIIFdataInURL
@@ -180,7 +180,7 @@ GEOLOCATOR.init =  async function(view){
         dataInURL = GEOLOCATOR.getURLVariable("data-uri")
     }
     if(dataInURL){
-        formattedWebAnnotationGeoJSON = await GEOLOCATOR.consumeForGeoJSON(dataInURL)
+        geoJsonData = await GEOLOCATOR.consumeForGeoJSON(dataInURL)
         .then(geoMarkers => {return geoMarkers})
         .catch(err => {
             console.error(err)
@@ -188,7 +188,7 @@ GEOLOCATOR.init =  async function(view){
         })
     }
     else{
-        formattedWebAnnotationGeoJSON = await fetch(GEOLOCATOR.URLS.QUERY, {
+        geoJsonData = await fetch(GEOLOCATOR.URLS.QUERY, {
             method: "POST",
             mode: "cors",
             headers: {
@@ -199,13 +199,12 @@ GEOLOCATOR.init =  async function(view){
         .then(response => response.json())
         .then(geoMarkers => {
             return geoMarkers.map(anno => {
-               //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
-               //OR the annotation.body.properties should take preference and only add in NEW properties...
-               let original_properties = {}
+               //The Annotation has properties on it that need to end up in the Web Annotation body GeoJSON properties
+               //Clients consume just the GeoJSON, not the Web Anno, so map each Web Anno to just be its own body.
                if(!anno.body.hasOwnProperty("properties")){
-                   original_properties = anno.body.properties
                    anno.body.properties = {}
                }
+               let original_properties = anno.body.properties
                if(anno.hasOwnProperty("creator")){
                    anno.body.properties.annoCreator = anno.creator
                }
@@ -219,9 +218,8 @@ GEOLOCATOR.init =  async function(view){
             return []
         })
     }
-    formattedWebAnnotationGeoJSON = formattedWebAnnotationGeoJSON.flat(1) //AnnotationPages and FeatureCollections cause arrays in arrays.  
-    // Now loop all the Annotations and just keep the anno.body, which is the GeoJSON for the web map.
-    let allGeos = await formattedWebAnnotationGeoJSON.map(async function(geoJSON){ 
+    let formattedGeoJsonData = geoJsonData.flat(1) //AnnotationPages and FeatureCollections cause arrays in arrays.  
+    let allGeos = await formattedGeoJsonData.map(async function(geoJSON){ 
         //Avoid NULLS and blanks in the UI
         let targetObjDescription = "No English description provided.  See targeted resource for more details."
         let targetObjLabel = "No English label provided.  See targeted resource for more details."
@@ -261,21 +259,22 @@ GEOLOCATOR.init =  async function(view){
         let formattedProps = {"annoID":annoID, "targetID":targetURI, "label":label,"description":description, "creator": creator, "isIIIF":isIIIF}
         geoJSON.properties = formattedProps
         /**
-         * Everything below is to support metadata.  Typically, a web map UI shows key \n value for free.  
-         * For these Web Annotations, we want to show the label and description/summary from the target, which is why we do this.
+         * Everything below is to support metadata on the target object.  Typically, a web map UI shows key \n value for free.  
+         * We want to show the label and description/summary from the target, especially if they are not provided in GeoJSON.properties.
          * We have to format things, like language maps, into something the web map will understand (basic key:string || num).
          * In the end, we could just say "we only support what is in the GeoJSON.properties already, which is what you should be doing".
-         * Instead, here we attempt to resolve the target and take its label and description if it did not have one already.  
+         * Instead, here we attempt to resolve the target and take its label and description if the GeoJSON did not have them already.  
          */
         //We resolve the targets live time to look for metadata that was not in GeoJSON.properties.
+        //Note that we are doing this every time to support the isIIIF flag.  If we remove that, we can put this fetch behind conditionals.  
         let targetObj = await fetch(targetURI)
         .then(resp => resp.json())
         .catch(err => {
             console.error(err)
             return null
         })
-       
         if(targetObj){
+            //Note that these target object properties will not overwrite GeoJSON.properties, but they could.
             isIIIF = GEOLOCATOR.checkForIIIF(targetObj)
             formattedProps.isIIIF = isIIIF
             //v3 summary
@@ -298,7 +297,7 @@ GEOLOCATOR.init =  async function(view){
                     targetObjDescription = targetObj.description ? targetObj.description : "No English description provided.  See targeted resource for more details."
                 }
             }
-            //v3 label
+            //v2 or v3 label
             if(targetObj.hasOwnProperty("label")){
                 if(typeof targetObj.label === "string"){
                     targetObjLabel = targetObj.label
@@ -312,8 +311,8 @@ GEOLOCATOR.init =  async function(view){
                     }
                 }
             }
-            //v2 label
-            if(targetObjLabel=== "No English label provided.  See targeted resource for more details."){
+            //Check for 'name' as an alternative to 'label'
+            if(targetObjLabel === "No English label provided.  See targeted resource for more details."){
                 if(targetObj.hasOwnProperty("name") && typeof targetObj.name === "string"){
                     targetObjLabel = targetObj.name ? targetObj.name : "No English label provided.  See targeted resource for more details."
                 }
