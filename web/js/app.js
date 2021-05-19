@@ -61,24 +61,44 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
             alert("This will only consume IIIF Presentation API 3 Manifest and Canvas resources.  A context (@context) must be present on the resource.")
             return r
         }
-        //TODO navPlace check ahead of annotations check
         let hasNavPlace = false;
+        let manifestGeoJson = []
+        let canvasesGeoJSON = []
         if(resourceType === "Manifest"){
-            //Check for navPlace on the Manifest and each Canvas in the Manifest
-            hasNavPlace = true
+            //TODO Check for navPlace on the Manifest and each Canvas in the Manifest
+            let manifestGeo = {}
+            if(dataObj.hasOwnProperty("navPlace")){
+                hasNavPlace = true
+                manifestGeo = dataObj.navPlace
+            }
+            let canvasGeos = dataObj.items.filter(item => {
+                let itemType = item.type ? item.type : item["@type"] ? item["@type"] : ""
+                return (item.hasOwnProperty("navPlace") && itemType === "Canvas")
+            }).map(canvas => {
+                return canvas.navPlace
+            })
+            let geos = canvasGeos.append(manifestGeo)
+            return geos
         }
         else if(resourceType === "Canvas"){
-            //check for navPlace
-            hasNavPlace = true
+            //TODO check for navPlace on the Canvas
+            if(dataObj.hasOwnProperty("navPlace")){
+                return dataObj.navPlace
+            }
         }
-        if(!hasNavPlace && dataObj.hasOwnProperty("annotations") && dataObj.annotations.length){
+        /**
+         * If the object does not have navPlace, then it may have annotations on it.  Check for GeoJSON there.  
+         * Note that instead of preferencing, we could just consume both.  That is not the use case here though.
+         * If navPlace exists, then we don't check for Annotations.  
+         */
+        if(dataObj.hasOwnProperty("annotations") && dataObj.annotations.length){
             return dataObj.annotations.map(webAnno => {
                 let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
                 let webAnnoBodyType = ""
                 if(webAnnoType === "Annotation"){
-                    //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
                     webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
                     if(webAnnoBodyType){
+                        //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
                         if(typeof webAnnoBodyType === "string"){
                             if(webAnnoBodyType === "Feature"){
                                 if(!webAnno.body.hasOwnProperty("properties")){
@@ -108,6 +128,7 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                                 }
                             }
                         }
+                        //typeof webAnnoBodyType TODO could have been an array...
                     }
                 }
                 else if(webAnnoType === "AnnotationPage"){
@@ -133,7 +154,7 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                                         }
                                         else if (webAnnoBodyType === "FeatureCollection"){
                                             if(webAnno.hasOwnProperty("features") && webAnno.features.length){
-                                                return webAnno.features.map(feature => {
+                                                return webAnno.body.features.map(feature => {
                                                     //We assume the application that created these coordinates did not apply properties.  
                                                     if(!feature.hasOwnProperty("properties")){
                                                         feature.properties = {}
@@ -141,13 +162,14 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                                                     if(webAnno.hasOwnProperty("creator")){
                                                         feature.properties.annoCreator = webAnno.creator
                                                     }
-                                                    feature.body.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
-                                                    feature.body.properties.targetID = webAnno.target ? webAnno.target : ""
-                                                    return feature.body
+                                                    feature.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
+                                                    feature.properties.targetID = webAnno.target ? webAnno.target : ""
+                                                    return feature
                                                 })
                                             }
                                         }
                                     }
+                                    //typeof webAnnoBodyType TODO could have been an array...
                                 }
                             }
                         })
