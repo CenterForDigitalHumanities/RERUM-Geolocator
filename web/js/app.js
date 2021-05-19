@@ -71,19 +71,21 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                 hasNavPlace = true
                 manifestGeo = dataObj.navPlace
             }
-            let canvasGeos = dataObj.items.filter(item => {
+            let geos = dataObj.items.filter(item => {
                 let itemType = item.type ? item.type : item["@type"] ? item["@type"] : ""
                 return (item.hasOwnProperty("navPlace") && itemType === "Canvas")
             }).map(canvas => {
                 return canvas.navPlace
             })
-            let geos = canvasGeos.append(manifestGeo)
-            return geos
+            geos.append(manifestGeo)
+            r = geos
+            return r
         }
         else if(resourceType === "Canvas"){
             //TODO check for navPlace on the Canvas
             if(dataObj.hasOwnProperty("navPlace")){
-                return dataObj.navPlace
+                r = [dataObj.navPlace]
+                return r
             }
         }
         /**
@@ -92,7 +94,7 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
          * If navPlace exists, then we don't check for Annotations.  
          */
         if(dataObj.hasOwnProperty("annotations") && dataObj.annotations.length){
-            return dataObj.annotations.map(webAnno => {
+            let annoGeos = dataObj.annotations.map(webAnno => {
                 let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
                 let webAnnoBodyType = ""
                 if(webAnnoType === "Annotation"){
@@ -176,6 +178,9 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                     }
                 }
             })
+            //If you don't return r in the navPlace checks, it will make it to here and combine the navPlace geos and the annotation geos
+            r = [...r, ...annoGeos]
+            return r
         }
         else{
             alert("There were annotations found on this Manifest.  Nothing to draw.")
