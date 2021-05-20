@@ -67,27 +67,34 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
         if(resourceType === "Manifest"){
             //TODO Check for navPlace on the Manifest and each Canvas in the Manifest
             let manifestGeo = {}
+            let geos= []
+            let itemGeos = []
             if(dataObj.hasOwnProperty("navPlace")){
-                hasNavPlace = true
-                manifestGeo = dataObj.navPlace
+                //Remember these are feature collections.  We just want to move forward with the features.
+                manifestGeo = dataObj.navPlace.features
+                geos.push(manifestGeo)
             }
-            let geos = dataObj.items.filter(item => {
-                let itemType = item.type ? item.type : item["@type"] ? item["@type"] : ""
-                return (item.hasOwnProperty("navPlace") && itemType === "Canvas")
-            }).map(canvas => {
-                return canvas.navPlace
-            })
+            if(dataObj.hasOwnProperty("items") && dataObj.items.length){
+                itemGeos = dataObj.items.filter(item => {
+                    let itemType = item.type ? item.type : item["@type"] ? item["@type"] : ""
+                    return (item.hasOwnProperty("navPlace") && itemType === "Canvas")
+                }).map(canvas => {
+                    //Remember these are feature collections.  We just want to move forward with the features.
+                    return canvas.navPlace.features
+                })
+            }
+            geos = [...geos, ...itemGeos]
             if(geos.length){
                 hasNavPlace = true
             }
-            geos.append(manifestGeo)
             r = geos
             return r
         }
         else if(resourceType === "Canvas"){
             if(dataObj.hasOwnProperty("navPlace")){
                 hasNavPlace = true
-                r = [dataObj.navPlace]
+                //Remember these are feature collections.  We just want to move forward with the features.
+                r = dataObj.navPlace.features
                 return r
             }
         }
@@ -130,9 +137,9 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                                         if(webAnno.hasOwnProperty("creator")){
                                             feature.properties.annoCreator = webAnno.creator
                                         }
-                                        feature.body.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
-                                        feature.body.properties.targetID = webAnno.target ? webAnno.target : ""
-                                        return feature.body
+                                        feature.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
+                                        feature.properties.targetID = webAnno.target ? webAnno.target : ""
+                                        return feature
                                     })
                                 }
                             }
