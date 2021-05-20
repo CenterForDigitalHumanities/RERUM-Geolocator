@@ -21,12 +21,75 @@ GEOLOCATOR.URLS = {
 }
 
 /**
+ * A Web Annotation will have a body or a body.value that is a GeoJSON objects.
+ * We want to return a flat array of the Features contained in the body.
+ * This will also format the GeoJSON.properties for our metadata pop ups.
+ * 
+ * @param {type} annotation
+ * @return {Array}
+ */
+GEOLOCATOR.parseGeoJSONFromWebAnnotation = function (annotation){
+    let features = []
+    let geoJsonType = annotation.body.type ? annotation.body.type : annotation.body["@type"] ? annotation.body["@type"] : ""
+    if(typeof geoJsonType === "string"){
+        if(geoJsonType === "Feature"){
+            if(!annotation.body.hasOwnProperty("properties")){
+                annotation.body.properties = {}
+            }
+            if(annotation.hasOwnProperty("creator")){
+                annotation.body.properties.annoCreator = annotation.creator
+            }
+            annotation.body.properties.annoID = annotation["@id"] ? annotation["@id"] : annotation.id ? annotation.id : ""
+            annotation.body.properties.targetID = annotation.target ? annotation.target : ""
+            features = [annotation.body]
+            return features
+        }
+        else if (geoJsonType === "FeatureCollection"){
+            if(annotation.body.hasOwnProperty("features") && annotation.body.features.length){
+                features =  annotation.body.features.map(feature => {
+                    //We assume the application that created these coordinates did not apply properties.  
+                    if(!feature.hasOwnProperty("properties")){
+                        feature.properties = {}
+                    }
+                    if(annotation.hasOwnProperty("creator")){
+                        feature.properties.annoCreator = annotation.creator
+                    }
+                    feature.properties.annoID = annotation["@id"] ? annotation["@id"] : annotation.id ? annotation.id : ""
+                    feature.properties.targetID = annotation.target ? annotation.target : ""
+                    return feature
+                })
+
+            }
+        }
+    }
+    //TODO type could technically be an array.
+    return features
+}
+
+GEOLOCATOR.isSupportedContext = function (type, context){
+    switch(resourceType){
+            case "Manifest":
+                
+            break
+            case "Canvas":
+                
+            break
+            case "Annotation":
+                
+            break
+            case "AnnotationPage":
+            default:
+                alert("The data resource type is not supported.  It must be a IIIF Presentation API 3 'Manifest', 'Canvas', 'Annotation' or 'AnnotationPage'.  Please check the type.")
+        }
+}
+
+/**
  * Given the URI of a web resource, resolve it and draw the GeoJSON-LD within.
  * @param {type} URI of the web resource to dereference and consume.
  * @return {Array}
  */
 GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
-    let r = []
+    let geoJSONFeatures = []
     let dataObj = await fetch(dataURL)
         .then(resp => resp.json())
         .then(man => {return man})
@@ -34,48 +97,83 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
    
     if(dataObj){
         let resourceType = dataObj.type ? dataObj.type : dataObj["@type"] ? dataObj["@type"] : ""
+        let linkedDataContexts = dataObj.hasOwnProperty("@context") ? dataObj["@context"] : ""
         /**
          * Baked in support for IIIF Presentation API 3 resource types
          * Note that this demo imagines supporting other resource types besides those listed in the IIIF Presentation 3 API.  TODO.
          * For now, it will alert users about their web resource before processing anything.  If it isn't a supported type, we don't even try.  FIXME
          */
-        if(resourceType !== "Manifest" && resourceType !== "Canvas"){
-            alert("The data resource must be a IIIF Presentation API 3 'Manifest' or 'Canvas' resource type.  Please check the type.")
-            return r
-        }
-        if (dataObj.hasOwnProperty("@context")){
-            if(typeof dataObj["@context"] === "string" && dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json"){
-                alert("This will only consume IIIF Presentation API 3 'Manifest' and 'Canvas' resources.  Check the resource @context.")
-                return r
+        if(linkedDataContexts){
+            if(typeof dataObj["@context"] === "string"){
+                console.error("The resource you provided needs the GeoJSON-LD Linked Data Context and the Linked Data Context for itself to be processed.  @context should be an array.")
+                //return geoJSONFeatures
             }
             else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
-                if(!dataObj["@context"].includes("http://iiif.io/api/presentation/3/context.json")){
-                    alert("This will only consume IIIF Presentation API 3 'Manifest' and 'Canvas' resources.  Check the resource @context.")
-                    return r
+                if(!dataObj["@context"].includes("https://geojson.org/geojson-ld/geojson-context.jsonld")){
+                    console.error("The GeoJSON-LD context is not present on your resource.  Please add this to the @context on your resource for processing..")
+                    //return geoJSONFeatures
                 }
             }
             else if(typeof dataObj["@context"] === "object"){
-                alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 context.  This will only consume IIIF Presentation API 3 'Manifest' and 'Canvas' resources.")
-                return r
+                alert("We cannot support custom context objects.  You can include multiple Linked Data context links, but please include the latest IIIF Presentation API 3 context as the last entry.")
+                return geoJSONFeatures
             }
         }
         else{
-            alert("This will only consume IIIF Presentation API 3 'Manifest' and 'Canvas' resources.  A context (@context) must be present on the resource.")
-            return r
+            alert("The object provided does not contain any Linked Data contexts.  Please include the GeoJSON-LD context as well as the context for your resource.")
+            return geoJSONFeatures
         }
-        let hasNavPlace = false;
+        switch(resourceType){
+            case "Manifest":
+            case "Canvas":
+                if(typeof dataObj["@context"] === "string" && dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json"){
+                    alert("The IIIF resource type does not have the correct @context.")
+                    return geoJSONFeatures
+                }
+                else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
+                    if(!dataObj["@context"].includes("http://iiif.io/api/presentation/3/context.json")){
+                        alert("The IIIF resource type does not have the correct @context.")
+                        return geoJSONFeatures
+                    }
+                }
+                else if(typeof dataObj["@context"] === "object"){
+                    alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 context.")
+                    return geoJSONFeatures
+                }
+            break
+            case "Annotation":
+            case "AnnotationPage":
+                if(typeof dataObj["@context"] === "string" && (dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json" && dataObj["@context"] !== "http://www.w3.org/ns/anno.jsonld")){
+                    alert("This Web Annotation does not have a supporting context.  Please fix the @context for this Web Annotation.")
+                    return geoJSONFeatures
+                }
+                else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
+                    if(!dataObj["@context"].includes("http://iiif.io/api/presentation/3/context.json") && !dataObj["@context"].includes("http://www.w3.org/ns/anno.jsonld")){
+                        alert("The Web Annotation does not have the correct @context.  Please fix the @context for this Web Annotation.")
+                        return geoJSONFeatures
+                    }
+                }
+                else if(typeof dataObj["@context"] === "object"){
+                    alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 or Web Annotation context.")
+                    return geoJSONFeatures
+                }
+            break
+            default:
+                alert("The data resource type is not supported.  It must be a IIIF Presentation API 3 'Manifest', 'Canvas', 'Annotation' or 'AnnotationPage'.  Please check the type.")
+        }
+        let hasNavPlace = false
         if(resourceType === "Manifest"){
             //TODO Check for navPlace on the Manifest and each Canvas in the Manifest
             let manifestGeo = {}
             let geos= []
-            let itemGeos = []
+            let itemsGeos = []
             if(dataObj.hasOwnProperty("navPlace")){
                 //Remember these are feature collections.  We just want to move forward with the features.
                 manifestGeo = dataObj.navPlace.features
                 geos.push(manifestGeo)
             }
             if(dataObj.hasOwnProperty("items") && dataObj.items.length){
-                itemGeos = dataObj.items.filter(item => {
+                itemsGeos = dataObj.items.filter(item => {
                     let itemType = item.type ? item.type : item["@type"] ? item["@type"] : ""
                     return (item.hasOwnProperty("navPlace") && itemType === "Canvas")
                 }).map(canvas => {
@@ -83,24 +181,35 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                     return canvas.navPlace.features
                 })
             }
-            geos = [...geos, ...itemGeos]
-            if(geos.length){
-                hasNavPlace = true
-            }
-            r = geos
-            return r
+            geoJSONFeatures = [...geos, ...itemsGeos]
+            return geoJSONFeatures
         }
         else if(resourceType === "Canvas"){
             if(dataObj.hasOwnProperty("navPlace")){
                 hasNavPlace = true
                 //Remember these are feature collections.  We just want to move forward with the features.
-                r = dataObj.navPlace.features
-                return r
+                geoJSONFeatures = dataObj.navPlace.features
+                return geoJSONFeatures
             }
         }
-        if(r.length === 0 ){
-            console.warning("navPlace was not used in the web resource nor its child items.")
+        else if(resourceType === "Annotation"){
+            geoJSONFeatures = GEOLOCATOR.parseGeoJSONFromWebAnnotation(dataObj)
+            return geoJSONFeatures
         }
+        else if(resourceType === "AnnotationPage"){
+            if(dataObj.hasOwnProperty("items") && dataObj.items.length){
+                geoJSONFeatures = dataObj.items.map(webAnno => {
+                    return GEOLOCATOR.parseGeoJSONFromWebAnnotation(webAnno)
+                })
+                return geoJSONFeatures
+            }
+        }
+        else{
+            // There is no way for me to get the features, I don't know where to look.
+            alert("Unable to get GeoJSON Features.  The resource type is unknown and I don't know where to look.")
+            return geoJSONFeatures
+        }
+                
         /**
          * If the object does not have navPlace, then it may have annotations on it.  Check for GeoJSON there.  
          * Note that instead of preferencing, we could just consume both.  That is not the use case here though.
@@ -112,101 +221,31 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                 let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
                 let webAnnoBodyType = ""
                 if(webAnnoType === "Annotation"){
-                    webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
-                    if(webAnnoBodyType){
-                        //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
-                        if(typeof webAnnoBodyType === "string"){
-                            if(webAnnoBodyType === "Feature"){
-                                if(!webAnno.body.hasOwnProperty("properties")){
-                                    webAnno.body.properties = {}
-                                }
-                                if(webAnno.hasOwnProperty("creator")){
-                                    webAnno.body.properties.annoCreator = webAnno.creator
-                                }
-                                webAnno.body.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
-                                webAnno.body.properties.targetID = webAnno.target ? webAnno.target : ""
-                                return webAnno.body
-                            }
-                            else if (webAnnoBodyType === "FeatureCollection"){
-                                if(webAnno.hasOwnProperty("features") && webAnno.features.length){
-                                    return webAnno.features.map(feature => {
-                                        //We assume the application that created these coordinates did not apply properties.  
-                                        if(!feature.hasOwnProperty("properties")){
-                                            feature.properties = {}
-                                        }
-                                        if(webAnno.hasOwnProperty("creator")){
-                                            feature.properties.annoCreator = webAnno.creator
-                                        }
-                                        feature.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
-                                        feature.properties.targetID = webAnno.target ? webAnno.target : ""
-                                        return feature
-                                    })
-                                }
-                            }
-                        }
-                        //typeof webAnnoBodyType TODO could have been an array...
-                    }
+                    return GEOLOCATOR.parseGeoJSONFromWebAnnotation(webAnno)
                 }
                 else if(webAnnoType === "AnnotationPage"){
                     if(webAnno.hasOwnProperty("items") && webAnno.items.length){
                         return webAnno.items.map(webAnno => {
-                            let webAnnoType = webAnno.type ? webAnno.type : webAnno["@type"] ? webAnno["@type"] : ""
-                            let webAnnoBodyType = ""
-                            if(webAnnoType === "Annotation"){
-                                //The Annotation has properties on it, like label, that need to end up in the Web Annotation body GeoJSON properties...
-                                webAnnoBodyType = webAnno.body.type ? webAnno.body.type : webAnno.body["@type"] ? webAnno.body["@type"] : ""
-                                if(webAnnoBodyType){
-                                    if(typeof webAnnoBodyType === "string"){
-                                        if(webAnnoBodyType === "Feature"){
-                                            if(!webAnno.body.hasOwnProperty("properties")){
-                                                webAnno.body.properties = {}
-                                            }
-                                            if(webAnno.hasOwnProperty("creator")){
-                                                webAnno.body.properties.annoCreator = webAnno.creator
-                                            }
-                                            webAnno.body.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
-                                            webAnno.body.properties.targetID = webAnno.target ? webAnno.target : ""
-                                            return webAnno.body
-                                        }
-                                        else if (webAnnoBodyType === "FeatureCollection"){
-                                            if(webAnno.hasOwnProperty("features") && webAnno.features.length){
-                                                return webAnno.body.features.map(feature => {
-                                                    //We assume the application that created these coordinates did not apply properties.  
-                                                    if(!feature.hasOwnProperty("properties")){
-                                                        feature.properties = {}
-                                                    }
-                                                    if(webAnno.hasOwnProperty("creator")){
-                                                        feature.properties.annoCreator = webAnno.creator
-                                                    }
-                                                    feature.properties.annoID = webAnno["@id"] ? webAnno["@id"] : webAnno.id ? webAnno.id : ""
-                                                    feature.properties.targetID = webAnno.target ? webAnno.target : ""
-                                                    return feature
-                                                })
-                                            }
-                                        }
-                                    }
-                                    //typeof webAnnoBodyType TODO could have been an array...
-                                }
-                            }
+                            return GEOLOCATOR.parseGeoJSONFromWebAnnotation(webAnno)
                         })
                     }
                 }
             })
             //If you don't return r in the navPlace checks, it will make it to here and combine the navPlace geos and the annotation geos
-            r = [...r, ...annoGeos]
+            geoJSONFeatures = [...geoJSONFeatures, ...annoGeos]
             if(annoGeos.length === 0){
                 console.warning("There was no GeoJSON found in the Annotations on this web resource.")
             }
-            return r
+            return geoJSONFeatures
         }
         else{
             console.warning("There were no annotations found on this web resource.")
-            return r
+            return geoJSONFeatures
         }
     }
     else{
         console.error("URI did not resolve and so was not dereferencable.  There is no data.")
-        return r
+        return geoJSONFeatures
     }
 }
 
@@ -689,7 +728,6 @@ GEOLOCATOR.getURLVariable = function(variable)
         }
         return(false);
     }
-
 
 
 
