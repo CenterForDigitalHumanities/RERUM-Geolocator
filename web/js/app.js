@@ -66,23 +66,6 @@ GEOLOCATOR.parseGeoJSONFromWebAnnotation = function (annotation){
     return features
 }
 
-GEOLOCATOR.isSupportedContext = function (type, context){
-    switch(resourceType){
-            case "Manifest":
-                
-            break
-            case "Canvas":
-                
-            break
-            case "Annotation":
-                
-            break
-            case "AnnotationPage":
-            default:
-                alert("The data resource type is not supported.  It must be a IIIF Presentation API 3 'Manifest', 'Canvas', 'Annotation' or 'AnnotationPage'.  Please check the type.")
-        }
-}
-
 /**
  * Given the URI of a web resource, resolve it and draw the GeoJSON-LD within.
  * @param {type} URI of the web resource to dereference and consume.
@@ -96,6 +79,7 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
         .catch(err => {return null})
    
     if(dataObj){
+        let dataURI = dataObj["@id"] ? dataObj["@id"] : dataObj.id ? dataObj.id : ""
         let resourceType = dataObj.type ? dataObj.type : dataObj["@type"] ? dataObj["@type"] : ""
         let linkedDataContexts = dataObj.hasOwnProperty("@context") ? dataObj["@context"] : ""
         /**
@@ -109,13 +93,13 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                 //return geoJSONFeatures
             }
             else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
-                if(!dataObj["@context"].includes("https://geojson.org/geojson-ld/geojson-context.jsonld")){
-                    console.error("The GeoJSON-LD context is not present on your resource.  Please add this to the @context on your resource for processing..")
+                if(!dataObj["@context"].includes("https://geojson.org/geojson-ld/geojson-context.jsonld") && !dataObj["@context"].includes("http://geojson.org/geojson-ld/geojson-context.jsonld")){
+                    console.error("The GeoJSON-LD context is not present on your resource.  Please add this to the @context on your resource for processing.")
                     //return geoJSONFeatures
                 }
             }
             else if(typeof dataObj["@context"] === "object"){
-                alert("We cannot support custom context objects.  You can include multiple Linked Data context links, but please include the latest IIIF Presentation API 3 context as the last entry.")
+                alert("We cannot support custom context objects.  You can include multiple Linked Data context links.")
                 return geoJSONFeatures
             }
         }
@@ -123,39 +107,50 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
             alert("The object provided does not contain any Linked Data contexts.  Please include the GeoJSON-LD context as well as the context for your resource.")
             return geoJSONFeatures
         }
+        /**
+         * @context verification and validation.  This could probably be made better with a helper function.
+         */
         switch(resourceType){
             case "Manifest":
             case "Canvas":
-                if(typeof dataObj["@context"] === "string" && dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json"){
+                if(typeof dataObj["@context"] === "string" && 
+                        (dataObj["@context"] !== "https://iiif.io/api/presentation/3/context.json" || dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json")
+                    ){
                     alert("The IIIF resource type does not have the correct @context.")
                     return geoJSONFeatures
                 }
                 else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
-                    if(!dataObj["@context"].includes("http://iiif.io/api/presentation/3/context.json")){
+                    if(!(dataObj["@context"].includes("http://iiif.io/api/presentation/3/context.json") || dataObj["@context"].includes("https://iiif.io/api/presentation/3/context.json"))){
                         alert("The IIIF resource type does not have the correct @context.")
                         return geoJSONFeatures
                     }
                 }
                 else if(typeof dataObj["@context"] === "object"){
-                    alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 context.")
+                    alert("We cannot support custom context objects.  You can include multiple context JSON files.  Please include the latest IIIF Presentation API 3 context.")
                     return geoJSONFeatures
                 }
             break
             case "Annotation":
             case "AnnotationPage":
-                if(typeof dataObj["@context"] === "string" && (dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json" && dataObj["@context"] !== "http://www.w3.org/ns/anno.jsonld")){
-                    alert("This Web Annotation does not have a supporting context.  Please fix the @context for this Web Annotation.")
-                    return geoJSONFeatures
+                if(typeof dataObj["@context"] === "string" && (
+                        (dataObj["@context"] !== "https://iiif.io/api/presentation/3/context.json" || dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json") 
+                        ||(dataObj["@context"] !== "http://www.w3.org/ns/anno.jsonld" || dataObj["@context"] !== "https://www.w3.org/ns/anno.jsonld")
+                        )
+                    ){
+                    console.error("This Web Annotation does not have a supporting context.  Please fix the @context for "+ dataURI)
+                    //return geoJSONFeatures
                 }
                 else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
-                    if(!dataObj["@context"].includes("http://iiif.io/api/presentation/3/context.json") && !dataObj["@context"].includes("http://www.w3.org/ns/anno.jsonld")){
-                        alert("The Web Annotation does not have the correct @context.  Please fix the @context for this Web Annotation.")
-                        return geoJSONFeatures
+                    if(!((dataObj["@context"].includes("https://iiif.io/api/presentation/3/context.json" || dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json")) 
+                        ||(dataObj["@context"].includes("http://www.w3.org/ns/anno.jsonld") || dataObj["@context"].includes("https://www.w3.org/ns/anno.jsonld"))
+                        )){
+                        console.error("The Web Annotation does not have the correct @context.  Please fix the @context for "+ dataURI)
+                        //return geoJSONFeatures
                     }
                 }
                 else if(typeof dataObj["@context"] === "object"){
-                    alert("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 or Web Annotation context.")
-                    return geoJSONFeatures
+                    console.error("We cannot support custom context objects.  You can include multiple context JSON files, but please include the latest IIIF Presentation API 3 or Web Annotation context.")
+                    //return geoJSONFeatures
                 }
             break
             default:
@@ -163,7 +158,6 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
         }
         let hasNavPlace = false
         if(resourceType === "Manifest"){
-            //TODO Check for navPlace on the Manifest and each Canvas in the Manifest
             let manifestGeo = {}
             let geos= []
             let itemsGeos = []
@@ -172,6 +166,9 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                 manifestGeo = dataObj.navPlace.features
                 geos.push(manifestGeo)
             }
+            /*
+             * Also the Canvases??
+            */
             if(dataObj.hasOwnProperty("items") && dataObj.items.length){
                 itemsGeos = dataObj.items.filter(item => {
                     let itemType = item.type ? item.type : item["@type"] ? item["@type"] : ""
@@ -233,7 +230,7 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
             })
             //If you don't return r in the navPlace checks, it will make it to here and combine the navPlace geos and the annotation geos
             geoJSONFeatures = [...geoJSONFeatures, ...annoGeos]
-            if(annoGeos.length === 0){
+            if(geoJSONFeatures.length === 0){
                 console.warning("There was no GeoJSON found in the Annotations on this web resource.")
             }
             return geoJSONFeatures
@@ -295,18 +292,7 @@ GEOLOCATOR.init =  async function(view){
         .then(response => response.json())
         .then(geoMarkers => {
             return geoMarkers.map(anno => {
-               //The Annotation has properties on it that need to end up in the Web Annotation body GeoJSON properties
-               //Clients consume just the GeoJSON, not the Web Anno, so map each Web Anno to just be its own body.
-               if(!anno.body.hasOwnProperty("properties")){
-                   anno.body.properties = {}
-               }
-               let original_properties = anno.body.properties
-               if(anno.hasOwnProperty("creator")){
-                   anno.body.properties.annoCreator = anno.creator
-               }
-               anno.body.properties.annoID = anno["@id"] ? anno["@id"] : anno.id ? anno.id : ""
-               anno.body.properties.targetID = anno.target ? anno.target : ""
-               return anno.body
+               return GEOLOCATOR.parseGeoJSONFromWebAnnotation(anno)
             })
         })
         .catch(err => {
