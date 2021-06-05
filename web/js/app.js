@@ -30,23 +30,31 @@ GEOLOCATOR.URLS = {
  */
 GEOLOCATOR.parseGeoJSONFromWebAnnotation = function (annotation){
     let features = []
-    let geoJsonType = annotation.body.type ? annotation.body.type : annotation.body["@type"] ? annotation.body["@type"] : ""
+    let geoJsonType = ""
+    let geoJsonObject = {}
+    if(annotation.body.value && (annotation.body.value.type || annotation.body.value["@type"])){
+        geoJsonType = annotation.body.value.type ? annotation.body.value.type : annotation.body.value["@type"] ? annotation.body.value["@type"] : ""
+        geoJsonObject = annotation.body.value
+    }
+    else{
+        geoJsonType = annotation.body.type ? annotation.body.type : annotation.body["@type"] ? annotation.body["@type"] : ""
+        geoJsonObject = annotation.body
+    }
     if(typeof geoJsonType === "string"){
         if(geoJsonType === "Feature"){
-            if(!annotation.body.hasOwnProperty("properties")){
-                annotation.body.properties = {}
+            if(!geoJsonObject.hasOwnProperty("properties")){
+                geoJsonObject.properties = {}
             }
             if(annotation.hasOwnProperty("creator")){
-                annotation.body.properties.annoCreator = annotation.creator
+                geoJsonObject.properties.annoCreator = annotation.creator
             }
-            annotation.body.properties.annoID = annotation["@id"] ? annotation["@id"] : annotation.id ? annotation.id : ""
-            annotation.body.properties.targetID = annotation.target ? annotation.target : ""
-            features = [annotation.body]
-            return features
+            geoJsonObject.properties.annoID = annotation["@id"] ? annotation["@id"] : annotation.id ? annotation.id : ""
+            geoJsonObject.properties.targetID = annotation.target ? annotation.target : ""
+            features = [geoJsonObject]
         }
         else if (geoJsonType === "FeatureCollection"){
-            if(annotation.body.hasOwnProperty("features") && annotation.body.features.length){
-                features =  annotation.body.features.map(feature => {
+            if(geoJsonObject.hasOwnProperty("features") && geoJsonObject.features.length){
+                features = geoJsonObject.features.map(feature => {
                     //We assume the application that created these coordinates did not apply properties.  
                     if(!feature.hasOwnProperty("properties")){
                         feature.properties = {}
@@ -58,7 +66,6 @@ GEOLOCATOR.parseGeoJSONFromWebAnnotation = function (annotation){
                     feature.properties.targetID = annotation.target ? annotation.target : ""
                     return feature
                 })
-
             }
         }
     }
