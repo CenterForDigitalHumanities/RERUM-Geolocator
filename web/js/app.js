@@ -361,7 +361,7 @@ GEOLOCATOR.init =  async function(view){
         let targetURI = geoJSON.properties.targetID ? geoJSON.properties.targetID : "Error"
         let annoID = geoJSON.properties.annoID ? geoJSON.properties.annoID : "Unknown"
         let creator = geoJSON.properties.annoCreator ? geoJSON.properties.annoCreator : "geolocating@rerum.io"
-        //Here we make our formatted props.  Values have to be (string || num), no arrays or objects.  They break web map UIs.
+        //Here we make our formatted props the geoJSON properties.  Values have to be (string || num), no arrays or objects.
         let formattedProps = {"annoID":annoID, "targetID":targetURI, "label":label,"description":description, "creator": creator, "isIIIF":isIIIF}
         geoJSON.properties = formattedProps
         /**
