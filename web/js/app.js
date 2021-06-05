@@ -379,7 +379,7 @@ GEOLOCATOR.init =  async function(view){
         .then(resp => resp.json())
         .catch(err => {
             console.error(err)
-            return null
+            return geoJSON
         })
         if(targetObj){
             //Note that these target object properties will not overwrite GeoJSON.properties, but they could.
@@ -420,17 +420,17 @@ GEOLOCATOR.init =  async function(view){
                 }
             }
             //Check for 'name' as an alternative to 'label'
-            if(targetObjLabel === "No English label provided.  See targeted resource for more details."){
+            if(targetObjLabel === "No English label provided.  See targeted resource for more details." || targetObjLabel === ""){
                 if(targetObj.hasOwnProperty("name") && typeof targetObj.name === "string"){
                     targetObjLabel = targetObj.name ? targetObj.name : "No English label provided.  See targeted resource for more details."
                 }
             }
             //defaulting behavior, avoid NULLs and BLANKs for UIs sake. targetObjLabel and targetObjDescription are strings.
-            if(formattedProps.label === "No English label provided.  See targeted resource for more details."){
+            if(formattedProps.label === "No English label provided.  See targeted resource for more details." || formattedProps.label === ""){
                 //Then we don't have a label in the GeoJSON.properties.  Use the formatted label from the target, which may also just be this string.
                 formattedProps.label = targetObjLabel
             }
-            if(formattedProps.description === "No English description provided.  See targeted resource for more details."){
+            if(formattedProps.description === "No English description provided.  See targeted resource for more details." || formattedProps.description === ""){
                 //Then we don't have a description in the GeoJSON.properties.  Use the formatted description from the target, which may also just be this string.
                 formattedProps.description = targetObjDescription
             }
