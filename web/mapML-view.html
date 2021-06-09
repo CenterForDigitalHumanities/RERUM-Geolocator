@@ -11,6 +11,7 @@ and open the template in the editor.
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="https://unpkg.com/chota@latest">
         <script type="module" src="https://geogratis.gc.ca/mapml/client/web-map/mapml-viewer.js" crossorigin></script>
+        <!--<script type="module" src="https://geogratis.gc.ca/mapml/client/web-map/web-map.js" crossorigin></script>-->
         <script src="js/app.js"></script>  
         <style>
             body{
@@ -187,7 +188,7 @@ and open the template in the editor.
             </p>
             <div id="mapml-container">
                 <div id="loadingMessage" style="text-align: center;">Gathering Resource Data From Around The World...</div>
-                <mapml-viewer id="mapml-view" projection="OSMTILE" zoom="2" lat="0.0" lon="0.0" controls>
+                <mapml-viewer is="web-map" id="mapml-view" projection="OSMTILE" zoom="2" lat="0.0" lon="0.0" controls>
                     <layer- label="OSM Layer" src="https://geogratis.gc.ca/mapml/en/osmtile/osm/" checked="checked"></layer->
                 </mapml-viewer>
             </div>
@@ -215,6 +216,7 @@ and open the template in the editor.
             <a target="_blank" href="https://www.slu.edu/arts-and-sciences/ong-center/"><img class="brand" src="https://blog.ongcdh.org/blog/wp-content/uploads/2018/05/logo-dark.png"></a>
             <a target="_blank" href="http://rerum.io"><img class="brand" src="http://centerfordigitalhumanities.github.io/rerum/logo.png"><small>RERUM v1</small></a>
         </footer>
+        
     </body>
     
     <script>
