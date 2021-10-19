@@ -96,14 +96,14 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
          */
         if(linkedDataContexts){
             if(typeof dataObj["@context"] === "string"){
-                console.error("The resource you provided needs the GeoJSON-LD Linked Data Context and the Linked Data Context for itself to be processed.  @context should be an array.")
-                //return geoJSONFeatures
+//                console.error("The resource you provided needs the GeoJSON-LD Linked Data Context and the Linked Data Context for itself to be processed.  @context should be an array.")
+//                return geoJSONFeatures
             }
             else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
-                if(!dataObj["@context"].includes("https://geojson.org/geojson-ld/geojson-context.jsonld") && !dataObj["@context"].includes("http://geojson.org/geojson-ld/geojson-context.jsonld")){
-                    console.error("The GeoJSON-LD context is not present on your resource.  Please add this to the @context on your resource for processing.")
-                    //return geoJSONFeatures
-                }
+//                if(!dataObj["@context"].includes("https://geojson.org/geojson-ld/geojson-context.jsonld") && !dataObj["@context"].includes("http://geojson.org/geojson-ld/geojson-context.jsonld")){
+//                    console.error("The GeoJSON-LD context is not present on your resource.  Please add this to the @context on your resource for processing.")
+//                    return geoJSONFeatures
+//                }
             }
             else if(typeof dataObj["@context"] === "object"){
                 alert("We cannot support custom context objects.  You can include multiple Linked Data context links.")
@@ -123,7 +123,7 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                 if(typeof dataObj["@context"] === "string" && 
                         (dataObj["@context"] !== "https://iiif.io/api/presentation/3/context.json" || dataObj["@context"] !== "http://iiif.io/api/presentation/3/context.json")
                     ){
-                    alert("The IIIF resource type does not have the correct @context.")
+                    alert("The IIIF resource type does not have the correct @context, it must be Presentation API 3.")
                     return geoJSONFeatures
                 }
                 else if (Array.isArray(dataObj["@context"]) && dataObj["@context"].length > 0){
@@ -170,7 +170,24 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
             let itemsGeos = []
             if(dataObj.hasOwnProperty("navPlace")){
                 //Remember these are feature collections.  We just want to move forward with the features.
-                manifestGeo = dataObj.navPlace.features
+                if(dataObj.navPlace.features){
+                    //It is embedded
+                    manifestGeo = dataObj.navPlace.features
+                }
+                else{
+                    //It could be referenced
+                    let fid = dataObj.navPlace.id
+                    manifestGeo = await fetch(fid)
+                        .then(resp => resp.json())
+                        .then(collection => {
+                            return collection.features
+                        })
+                        .catch(err => {
+                            console.error(err)
+                            return []
+                        })
+                            
+                }
                 geos.push(manifestGeo)
             }
             /*
