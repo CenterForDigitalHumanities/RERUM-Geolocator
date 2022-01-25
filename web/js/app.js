@@ -485,27 +485,28 @@ GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
     GEOLOCATOR.mymap.setAttribute("lat", coords[0])
     GEOLOCATOR.mymap.setAttribute("long", coords[1])
     let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked="checked">`
-    feature_layer += `<meta name="projection" content="OSMTILE">`
-    feature_layer += `<meta name="cs" content="gcrs">`
-    feature_layer += `<meta name="extent" content="top-left-longitude=-180,top-left-latitude=84,bottom-right-longitude=180,bottom-right-latitude=-84">`
+    feature_layer += `<map-meta name="projection" content="OSMTILE"></map-meta>`
+    feature_layer += `<map-meta name="cs" content="gcrs"></map-meta>`
+    feature_layer += `<map-meta name="extent" content="top-left-longitude=-180,top-left-latitude=84,bottom-right-longitude=180,bottom-right-latitude=-84"></map-meta>`
     let mapML_features = geoMarkers.map(geojson_feature => {
         //We need each of these to be a <feature>.  Right now, they are GeoJSON-LD
         let feature_creator = geojson_feature.properties.creator
         let feature_web_URI = geojson_feature.properties.annoID
         let feature_label = geojson_feature.properties.label
+        let feature_caption = `<map-featurecaption>${feature_label}</map-featurecaption>`
         let feature_description = geojson_feature.properties.description
         let feature_describes = geojson_feature.properties.targetID
         let feature_lat = geojson_feature.geometry.coordinates[0]
         let feature_long = geojson_feature.geometry.coordinates[1]
-        let geometry = `<geometry><point><coordinates>${feature_lat} ${feature_long}</coordinates></point></geometry>`
+        let geometry = `<map-geometry><map-point><map-coordinates>${feature_lat} ${feature_long}</map-coordinates></map-point></map-geometry>`
         let properties = 
-        `<properties>
+        `<map-properties>
             <p>Label: ${feature_label}</p>
             <p>Description: ${feature_description}</p>
             <p><a target="_blank" href="${feature_describes}">Web Resource</a></p>
             <p><a target="_blank" href="${feature_web_URI}">Web Annotation</a></p>
-        </properties>`
-        let feature = `<feature class="generic_point">${properties} ${geometry}</feature>`
+        </map-properties>`
+        let feature = `<map-feature class="generic_point">${feature_caption} ${properties} ${geometry}</map-feature>`
         return feature
     })
     mapML_features = mapML_features.join(" ")
@@ -573,7 +574,7 @@ GEOLOCATOR.pointEachFeature = function (feature, layer) {
     layer.bindPopup(popupContent);
 }
 
-GEOLOCATOR.goToCoords = function(event, view){
+GEOLOCATOR.goToCoords = function(event, view  ){
     if(leafLat.value && leafLong.value){
         let coords = [leafLat.value, leafLong.value]
         switch(view){
@@ -581,7 +582,8 @@ GEOLOCATOR.goToCoords = function(event, view){
                 GEOLOCATOR.mymap.flyTo(coords,8)
             break
             case "mapML":
-
+//               the following should work
+                GEOLOCATOR.mymap.zoomTo(coords[0], coords[1], 8)
             break
             default:
         }
