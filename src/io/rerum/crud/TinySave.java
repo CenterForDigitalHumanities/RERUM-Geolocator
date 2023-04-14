@@ -43,6 +43,13 @@ public class TinySave extends HttpServlet {
         StringBuilder sb = new StringBuilder();
         int codeOverwrite = 500;
         TinyTokenManager manager = new TinyTokenManager();
+        if(manager.getAPISetting().equals("true")){
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Access-Control-Allow-Headers", "*");
+            response.setHeader("Access-Control-Allow-Methods", "POST");
+            response.setHeader("Access-Control-Expose-Headers", "*"); //Headers are restricted, unless you explicitly expose them.  Darn Browsers.
+            response.setHeader("Vary", "Origin");
+        }
         BufferedReader bodyReader = request.getReader();
         StringBuilder bodyString = new StringBuilder();
         JSONObject requestJSON = new JSONObject();
@@ -116,10 +123,6 @@ public class TinySave extends HttpServlet {
                 error.close();
             }
             connection.disconnect();
-            //Hand back rerumserver response as this API's response.
-            if(manager.getAPISetting().equals("true")){
-                response.setHeader("Access-Control-Allow-Origin", "*");
-            }
             response.setStatus(codeOverwrite);
             response.setHeader("Content-Type", "application/json; charset=utf-8");
             response.getWriter().print(sb.toString());

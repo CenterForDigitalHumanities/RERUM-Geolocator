@@ -40,6 +40,13 @@ public class TinyQuery extends HttpServlet {
         protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, Exception {             
         TinyTokenManager manager = new TinyTokenManager();
+        if(manager.getAPISetting().equals("true")){
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Access-Control-Allow-Headers", "*");
+            response.setHeader("Access-Control-Allow-Methods", "POST");
+            response.setHeader("Access-Control-Expose-Headers", "*"); //Headers are restricted, unless you explicitly expose them.  Darn Browsers.
+            response.setHeader("Vary", "Origin");
+        }
         BufferedReader bodyReader = request.getReader();
         StringBuilder bodyString = new StringBuilder();
         String line;
@@ -120,9 +127,6 @@ public class TinyQuery extends HttpServlet {
                 error.close();
             }
             connection.disconnect();
-            if(manager.getAPISetting().equals("true")){
-                response.setHeader("Access-Control-Allow-Origin", "*"); //To use this as an API, it must contain CORS headers
-            }
             response.setStatus(codeOverwrite);
             response.setHeader("Content-Type", "application/json; charset=utf-8");
             response.setCharacterEncoding("UTF-8");

@@ -80,7 +80,7 @@ GEOLOCATOR.parseGeoJSONFromWebAnnotation = function (annotation){
  */
 GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
     let geoJSONFeatures = []
-    let dataObj = await fetch(dataURL)
+    let dataObj = await fetch(dataURL.replace(/^https?:/,location.protocol))
         .then(resp => resp.json())
         .then(man => {return man})
         .catch(err => {return null})
@@ -177,7 +177,7 @@ GEOLOCATOR.consumeForGeoJSON = async function(dataURL){
                 else{
                     //It could be referenced
                     let fid = dataObj.navPlace.id
-                    manifestGeo = await fetch(fid)
+                    manifestGeo = await fetch(fid.replace(/^https?:/,location.protocol))
                         .then(resp => resp.json())
                         .then(collection => {
                             return collection.features
@@ -287,7 +287,7 @@ GEOLOCATOR.init =  async function(view){
     let geoAssertionsQuery = {
         "__rerum.history.next": historyWildcard,
         "__rerum.generatedBy"  : GEOLOCATOR.APPAGENT,
-        "creator" : "geolocating@rerum.io"
+        "creator" : GEOLOCATOR.APPAGENT
     }
     let geoJsonData = []
     //Maybe want to do specific warnings around 'iiif-content' so separate support
@@ -392,7 +392,7 @@ GEOLOCATOR.init =  async function(view){
         //We resolve the targets live time to look for metadata that was not in GeoJSON.properties.
         //Note that we are doing this every time to support the isIIIF flag.  If we remove that, we can put this fetch behind conditionals. 
         //Maybe only do this if you don't already have a label and/or description from the GeoJSON properties.
-        let targetObj = await fetch(targetURI)
+        let targetObj = await fetch(targetURI.replace(/^https?:/,location.protocol))
         .then(resp => resp.json())
         .catch(err => {
             console.error(err)
@@ -675,7 +675,7 @@ GEOLOCATOR.submitAnno = async function(event, app){
                 "motivation":"tagging",
                 "target":targetURL,   
                 "body":geoJSON,
-                "creator":"geolocating@rerum.io"
+                "creator": GEOLOCATOR.APPAGENT
             }
 
         let createdObj = await fetch(GEOLOCATOR.URLS.CREATE, {
