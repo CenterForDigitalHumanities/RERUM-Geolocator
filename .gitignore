@@ -3,3 +3,4 @@ build/
 nbproject/
 *.properties
 /dist/
+.vscode/settings.json
