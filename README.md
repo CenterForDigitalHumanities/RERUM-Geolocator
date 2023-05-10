@@ -1,4 +1,4 @@
-# RERUM Geolocator
+# Rerum Geolocator
 ![image](https://user-images.githubusercontent.com/3287006/120902008-8bf19900-c603-11eb-9bf7-3c8f2b195103.png)
 
 
