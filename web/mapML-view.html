@@ -10,8 +10,7 @@ and open the template in the editor.
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="https://unpkg.com/chota@latest">
-        <script type="module" src="https://geogratis.gc.ca/mapml/client/web-map/mapml-viewer.js" crossorigin></script>
-        <!--<script type="module" src="https://geogratis.gc.ca/mapml/client/web-map/web-map.js" crossorigin></script>-->
+        <script type="module" src="https://unpkg.com/@maps4html/web-map-custom-element@0.11.0/dist/mapml-viewer.js" crossorigin></script>
         <script src="js/app.js"></script>  
         <style>
             body{
@@ -182,14 +181,20 @@ and open the template in the editor.
         <div class="container">
             <p class="howTo" id='howTo'> 
                 View the map below for rendered Web Annotation geographic assertions created by this application.  Pan and zoom are supported. 
-                Supplying direct coordinates is available below the map. <a onclick="GEOLOCATOR.mymap.flyTo([12,12],2)">[Shift] + [Z]</a> 
+                Supplying direct coordinates is available below the map. <a onclick="GEOLOCATOR.mymap.zoomTo(12,12,2)">[Shift] + [Z]</a>  
                 will zoom out for a holistic view.  Click the tab below the map to filter showing only assertions with IIIF targets or all assertions.  
                 Clicking any blue point on the map will show applicable information about the target when the URI is resolvable.
             </p>
             <div id="mapml-container">
                 <div id="loadingMessage" style="text-align: center;">Gathering Resource Data From Around The World...</div>
-                <mapml-viewer is="web-map" id="mapml-view" projection="OSMTILE" zoom="2" lat="0.0" lon="0.0" controls>
-                    <layer- label="OSM Layer" src="https://geogratis.gc.ca/mapml/en/osmtile/osm/" checked="checked"></layer->
+                <mapml-viewer id="mapml-view" projection="OSMTILE" zoom="2" lat="0.0" lon="0.0" controls>
+                  <layer- label="OSM Layer" checked>
+                    <map-extent units="OSMTILE">
+                      <map-input name="z" type="zoom" value="18" min="0" max="18"></map-input>  
+                      <map-input name="s" type="hidden" shard="true" list="servers"></map-input>
+                      <map-input name="x" type="location" units="tilematrix" axis="column" min="0" max="262144"></map-input><map-input name="y" type="location" units="tilematrix" axis="row" min="0" max="262144"></map-input>
+                      <map-link rel="tile" tref="https://tile.openstreetmap.org/{z}/{x}/{y}.png"></map-link></map-extent>
+                  </layer->
                 </mapml-viewer>
             </div>
 <!--            <div class="col">
@@ -222,7 +227,7 @@ and open the template in the editor.
     <script>
         
         //let latlang = [38.6360699, -90.2348349] //SLU in lat,long order
-        GEOLOCATOR.init("mapML")
+        GEOLOCATOR.init("mapML");
         /**
          * Use Shift + Z to do the zoom out to xsee dots across the globe.
          */

@@ -481,41 +481,41 @@ GEOLOCATOR.init =  async function(view){
  * @return {undefined}
  */
 GEOLOCATOR.initializeMapML = async function(coords, geoMarkers){
-    GEOLOCATOR.mymap = document.getElementById('mapml-view')
-    GEOLOCATOR.mymap.setAttribute("lat", coords[0])
-    GEOLOCATOR.mymap.setAttribute("long", coords[1])
-    let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked="checked">`
-    feature_layer += `<map-meta name="projection" content="OSMTILE"></map-meta>`
-    feature_layer += `<map-meta name="cs" content="gcrs"></map-meta>`
-    feature_layer += `<map-meta name="extent" content="top-left-longitude=-180,top-left-latitude=84,bottom-right-longitude=180,bottom-right-latitude=-84"></map-meta>`
+    GEOLOCATOR.mymap = document.getElementById('mapml-view');
+    // https://maps4html.org/web-map-doc/docs/api/mapml-viewer-api#zoomtolat-lon-zoom
+    GEOLOCATOR.mymap.zoomTo(coords[0],coords[1],GEOLOCATOR.mymap.zoom);
+    let feature_layer = `<layer- label="RERUM Geolocation Assertions" checked="checked">
+    <map-meta name="projection" content="OSMTILE"></map-meta>
+    <map-meta name="cs" content="gcrs"></map-meta>
+  <map-meta name="extent" content="top-left-longitude=-180,top-left-latitude=84,bottom-right-longitude=180,bottom-right-latitude=-84"></map-meta>`;
     let mapML_features = geoMarkers.map(geojson_feature => {
         //We need each of these to be a <feature>.  Right now, they are GeoJSON-LD
-        let feature_creator = geojson_feature.properties.creator
-        let feature_web_URI = geojson_feature.properties.annoID
-        let feature_label = geojson_feature.properties.label
-        let feature_caption = `<map-featurecaption>${feature_label}</map-featurecaption>`
-        let feature_description = geojson_feature.properties.description
-        let feature_describes = geojson_feature.properties.targetID
-        let feature_lat = geojson_feature.geometry.coordinates[0]
-        let feature_long = geojson_feature.geometry.coordinates[1]
-        let geometry = `<map-geometry><map-point><map-coordinates>${feature_lat} ${feature_long}</map-coordinates></map-point></map-geometry>`
+        let feature_creator = geojson_feature.properties.creator;
+        let feature_web_URI = geojson_feature.properties.annoID;
+        let feature_label = geojson_feature.properties.label;
+        let feature_caption = `<map-featurecaption>${feature_label}</map-featurecaption>`;
+        let feature_description = geojson_feature.properties.description;
+        let feature_describes = geojson_feature.properties.targetID;
+        let feature_lat = geojson_feature.geometry.coordinates[0];
+        let feature_long = geojson_feature.geometry.coordinates[1];
+        let geometry = `<map-geometry><map-point><map-coordinates>${feature_lat} ${feature_long}</map-coordinates></map-point></map-geometry>`;
         let properties = 
         `<map-properties>
             <p>Label: ${feature_label}</p>
             <p>Description: ${feature_description}</p>
             <p><a target="_blank" href="${feature_describes}">Web Resource</a></p>
             <p><a target="_blank" href="${feature_web_URI}">Web Annotation</a></p>
-        </map-properties>`
-        let feature = `<map-feature class="generic_point">${feature_caption} ${properties} ${geometry}</map-feature>`
-        return feature
-    })
-    mapML_features = mapML_features.join(" ")
-    feature_layer += `${mapML_features}</layer->` 
-    document.getElementById('mapml-container').style.backgroundImage = "none"
-    loadingMessage.classList.add("is-hidden")
+        </map-properties>`;
+        let feature = `<map-feature class="generic_point">${feature_caption} ${properties} ${geometry}</map-feature>`;
+        return feature;
+    });
+    mapML_features = mapML_features.join(" ");
+    feature_layer += `${mapML_features}</layer->`; 
+    document.getElementById('mapml-container').style.backgroundImage = "none";
+    loadingMessage.classList.add("is-hidden");
     //Add the features to the mapml-viewer dynamically
-    GEOLOCATOR.mymap.innerHTML += feature_layer
-}
+    GEOLOCATOR.mymap.innerHTML += feature_layer;
+};
     
 GEOLOCATOR.initializeLeaflet = async function(coords, geoMarkers){
     GEOLOCATOR.mymap = L.map('leafletInstanceContainer')   
@@ -588,7 +588,7 @@ GEOLOCATOR.goToCoords = function(event, view  ){
             default:
         }
         document.getElementById("currentCoords").innerHTML = "["+coords.toString()+"]"
-        window.scrollTo(0, leafletInstanceContainer.offsetTop - 5)
+//        window.scrollTo(0, leafletInstanceContainer.offsetTop - 5)
     }
 }
 
